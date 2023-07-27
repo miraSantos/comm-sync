@@ -4,14 +4,14 @@ list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
-source("/dos/MIT-WHOI/community_sychrony/scripts/adv_biwavelet_packages.R")
+source("/dos/MIT-WHOI/community_synchrony/scripts/adv_biwavelet_packages.R")
 rm(wt) #replaces wt with the correct biwavelet version (there are 2 versions)
 
 #loading in counts and carbon estimates
-dfcount_class_raw <- read.csv("/dos/MIT-WHOI/community_sychrony/data/raw/CSVs/classcount_MVCO.csv",header=TRUE)
-dfcarbon_class_raw <- read.csv("/dos/MIT-WHOI/community_sychrony/data/raw/CSVs/carbon_count_MVCO.csv",header=TRUE)
-mdata_MVCO <- read.csv("/dos/MIT-WHOI/community_sychrony/data/raw/CSVs/meta_data_MVCO.csv",header=TRUE)
-dfcarbon_group_raw <- read.csv("/dos/MIT-WHOI/community_sychrony/data/raw/CSVs/carbon_group_MVCO.csv",header=TRUE)
+dfcount_class_raw <- read.csv("/dos/MIT-WHOI/community_synchrony/data/raw/CSVs/classcount_MVCO.csv",header=TRUE)
+dfcarbon_class_raw <- read.csv("/dos/MIT-WHOI/community_synchrony/data/raw/CSVs/carbon_count_MVCO.csv",header=TRUE)
+mdata_MVCO <- read.csv("/dos/MIT-WHOI/community_synchrony/data/raw/CSVs/meta_data_MVCO.csv",header=TRUE)
+dfcarbon_group_raw <- read.csv("/dos/MIT-WHOI/community_synchrony/data/raw/CSVs/carbon_group_MVCO.csv",header=TRUE)
 
 
 #LOADING IN ENV
@@ -91,7 +91,7 @@ dfconc = fill_gaps(dfconc,c(shared_list,env_index))
 dfcarbon_conc = fill_gaps(dfcarbon_conc,c(shared_list,env_index))
 dfcarbon_group = fill_gaps(dfcarbon_group,c(group_list,env_index))
 
-save(dfcarbon_group,group_list,file="/dos/MIT-WHOI/community_sychrony/data/r_objects/2023_Jul_19_dfcarbon_group.RData")
-save(dfconc,dfcarbon_conc,shared_list,file="/dos/MIT-WHOI/community_sychrony/data/r_objects/2023_Jul_19_dfcount_index.RData")
-write.csv(dfconc,file="/dos/MIT-WHOI/community_sychrony/data/dfconc_2023_Jul_19.csv")
-write.csv(dfcarbon_conc,file="/dos/MIT-WHOI/community_sychrony/data/dfcarbon_conc_2023_Jul_19.csv")
+save(dfcarbon_group,group_list,file="/dos/MIT-WHOI/community_synchrony/data/r_objects/2023_Jul_19_dfcarbon_group.RData")
+save(dfconc,dfcarbon_conc,shared_list,file="/dos/MIT-WHOI/community_synchrony/data/r_objects/2023_Jul_19_dfcount_index.RData")
+write.csv(dfconc,file="/dos/MIT-WHOI/community_synchrony/data/dfconc_2023_Jul_19.csv")
+write.csv(dfcarbon_conc,file="/dos/MIT-WHOI/community_synchrony/data/dfcarbon_conc_2023_Jul_19.csv")

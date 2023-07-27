@@ -1,13 +1,13 @@
-load("/dos/MIT-WHOI/community_sychrony/data/r_objects/2023_Jul_19_dfcarbon_group.RData")
-load("/dos/MIT-WHOI/community_sychrony/data/r_objects/2023_Jul_19_dfcount_index.RData")
-load("/dos/MIT-WHOI/community_sychrony/data/r_objects/2023_Jul_19_dfnut.RData")
+load("/dos/MIT-WHOI/community_synchrony/data/r_objects/2023_Jul_19_dfcarbon_group.RData")
+load("/dos/MIT-WHOI/community_synchrony/data/r_objects/2023_Jul_19_dfcount_index.RData")
+load("/dos/MIT-WHOI/community_synchrony/data/r_objects/2023_Jul_19_dfnut.RData")
 list.of.packages <- c("RColorBrewer", "lubridate","ggplot2",
                       "tibbletime","dplyr","sets",
                       "reshape2","ggformula","tidyr","ggbump")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
-source("/dos/MIT-WHOI/community_sychrony/scripts//adv_biwavelet_packages.R")
+source("/dos/MIT-WHOI/community_synchrony/scripts//adv_biwavelet_packages.R")
 rm(wt)
 
 #compute date values 
@@ -200,7 +200,7 @@ ggplot(data=dfnut,aes(x = month,y = nitrate_mean)) +
   theme(text = element_text(size = 15))
 
 
-ggsave(filename="/dos/MIT-WHOI/community_sychrony/figures/biwavelet_coherence/group_level/nitrate-regime.png")
+ggsave(filename="/dos/MIT-WHOI/community_synchrony/figures/biwavelet_coherence/group_level/nitrate-regime.png")
 
 ggplot(data=dfnut,aes(x = month,y = phosphate_mean)) +
   geom_boxplot(alpha=0.5,color="purple") + 
@@ -213,7 +213,7 @@ ggplot(data=dfnut,aes(x = month,y = phosphate_mean)) +
   ylab("Phosphate Concentration  (umol/L)")+
   theme(text = element_text(size = 15))
 
-ggsave(filename="/dos/MIT-WHOI/community_sychrony/figures/biwavelet_coherence/group_level/phosphate-regime.png")
+ggsave(filename="/dos/MIT-WHOI/community_synchrony/figures/biwavelet_coherence/group_level/phosphate-regime.png")
 
 
 ggplot(data=dfnut,aes(x = month,y = silicate_mean)) +
@@ -228,7 +228,7 @@ ggplot(data=dfnut,aes(x = month,y = silicate_mean)) +
   ylab("Silicate Concentration  (umol/L)")+
   theme(text = element_text(size = 15))
 
-ggsave(filename="/dos/MIT-WHOI/community_sychrony/figures/biwavelet_coherence/group_level/silicate-regime.png")
+ggsave(filename="/dos/MIT-WHOI/community_synchrony/figures/biwavelet_coherence/group_level/silicate-regime.png")
 
 
 ggplot(data=dfnut,aes(x = month,y = ammonia_mean)) +
@@ -240,7 +240,7 @@ ggplot(data=dfnut,aes(x = month,y = ammonia_mean)) +
   scale_x_discrete(breaks=seq(1,12,1))+  facet_grid(cols=vars(regime))+
   xlab("Month of Year")+
   ylab("Ammonia Concentration")
-ggsave(filename="/dos/MIT-WHOI/community_sychrony/figures/biwavelet_coherence/group_level/ammonia-regime.png")
+ggsave(filename="/dos/MIT-WHOI/community_synchrony/figures/biwavelet_coherence/group_level/ammonia-regime.png")
 
 
 ##############################################
@@ -252,7 +252,7 @@ ggplot(data=dfnut,aes(x = month,y = nitrate_mean/phosphate_mean)) +
   ylim(0,20)+
   theme(text = element_text(size = 15))
 
-ggsave(filename="/dos/MIT-WHOI/community_sychrony/figures/biwavelet_coherence/group_level/np_ratio-regime.png")
+ggsave(filename="/dos/MIT-WHOI/community_synchrony/figures/biwavelet_coherence/group_level/np_ratio-regime.png")
 
 
 ########################## SPECIES LEVEL ###########################
@@ -277,7 +277,7 @@ ggplot(data=dfcarbon_conc,aes(x = month,y = Chaetoceros_danicus)) +
   facet_grid(cols=vars(regime))+
   xlab("Month of Year")+
   ylab("Chaetoceros Danicus Concentration")
-ggsave(filename="/dos/MIT-WHOI/community_sychrony/figures/biwavelet_coherence/group_level/chaetoceros_danicus-regime.png")
+ggsave(filename="/dos/MIT-WHOI/community_synchrony/figures/biwavelet_coherence/group_level/chaetoceros_danicus-regime.png")
 
 ggplot(data=dfcarbon_conc,aes(x = week,y =Thalassiosira)) +
   geom_boxplot(alpha=0.5) + 
@@ -286,7 +286,7 @@ ggplot(data=dfcarbon_conc,aes(x = week,y =Thalassiosira)) +
   ylim(0,10000)+
   xlab("Month of Year")+
   ylab("Thalassiosira Concentration")
-ggsave(filename="/dos/MIT-WHOI/community_sychrony/figures/biwavelet_coherence/group_level/thalassiosira-regime.png")
+ggsave(filename="/dos/MIT-WHOI/community_synchrony/figures/biwavelet_coherence/group_level/thalassiosira-regime.png")
 
 
 
