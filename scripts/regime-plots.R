@@ -1,14 +1,17 @@
-load("/dos/MIT-WHOI/community_synchrony/data/r_objects/2023_Jul_19_dfcarbon_group.RData")
-load("/dos/MIT-WHOI/community_synchrony/data/r_objects/2023_Jul_19_dfcount_index.RData")
-load("/dos/MIT-WHOI/community_synchrony/data/r_objects/2023_Jul_19_dfnut.RData")
+
+save_r_path = "C:\\Users\\Miraflor P Santos\\comm-sync\\data\\ifcb\\r_objects\\unfilled\\"
+load(paste0(save_r_path,"2023_Jul_28_dfcarbon_group.RData"))
+load(paste0(save_r_path,"2023_Jul_28_dfcount_index.RData"))
+
+
+
 list.of.packages <- c("RColorBrewer", "lubridate","ggplot2",
                       "tibbletime","dplyr","sets",
                       "reshape2","ggformula","tidyr","ggbump")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
-source("/dos/MIT-WHOI/community_synchrony/scripts//adv_biwavelet_packages.R")
-rm(wt)
+
 
 #compute date values 
 dfcarbon_group$year = year(dfcarbon_group$date)
@@ -59,21 +62,24 @@ ggplot(data=dfcarbon_group,aes(x=doy_numeric))+
 
 
 #################### PLOTTING REGIMES, FUNCTIONAL GROUPS at WEEKLY LEVEL
+
+ggplot(data=dfcarbon_group,aes(x = month,y = protist_tricho))+
+  geom_boxplot(color="darkgreen",outlier.color="black")+ 
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(1,52,5))+
+  xlab("Week of Year")+
+  ylab("Protist Carbon Concentration")+ylim(0,2.5e5)+
+  theme(text = element_text(size = 15))
+
 ggplot(data=dfcarbon_group,aes(x = week,y = Diatom_noDetritus)) + 
   geom_boxplot(color="darkgreen",outlier.color="black")+ 
   facet_grid(cols=vars(regime))+
   xlab("Week of Year")+
   scale_x_discrete(breaks=seq(1,52,5))+
-  ylab("Diatom Carbon Concentration (ug/mL)")+ylim(0,1.25e5)+
+  ylab(paste0(group_list[1]," Carbon Concentration (ug/mL)"))+ylim(0,1.25e5)+
   theme(text = element_text(size = 15))
 
-ggplot(data=dfcarbon_group,aes(x = week,y = protist_tricho))+
-  geom_boxplot(color="darkgreen",outlier.color="black")+ 
-  facet_grid(cols=vars(regime))+
-  scale_x_discrete(breaks=seq(1,52,5))+
-  xlab("Week of Year")+
-  ylab("Protist Carbon Concentration")+ylim(0,2.5e5)+
-  theme(text = element_text(size = 15))
+
 
 ggplot(data=dfcarbon_group,aes(x = week,y = Ciliate))+
   geom_boxplot(color="darkgreen",outlier.color="black")+ 
@@ -136,7 +142,10 @@ ggplot(data=dfcarbon_group,aes(x = date,y = (salinity_beam))) +
   xlab("Date")+
   ylab("Salinity (PSU)")
 
-ggplot(data=dfcarbon_group,aes(x = week,y = (salinity_beam))) +
+
+
+
+ggplot(data=dfcarbon_group_ms,aes(x = week,y = (salinity_beam))) +
   geom_boxplot(alpha=0.2,color="black")+
   facet_grid(cols=vars(regime))+
   scale_x_discrete(breaks=seq(1,52,5))+
@@ -329,5 +338,23 @@ ggplot(df_ranked, aes(x = month, y = rank, color = Species)) +
 
 
 
+############# MEDIAN SALINITY
+
+dfcarbon_group_ms = dfcarbon_group %>% group_by(regime,doy_numeric) %>% 
+  mutate(median_salinity = median(salinity_beam)) %>%
+  ungroup()
+
+# Median salinity by day of year grouped by each regime (color) 
+ggplot(data = dfcarbon_group_ms) +
+  geom_line(aes(x = doy_numeric,y = median_salinity,color=regime),size = 1)+
+  scale_x_continuous(breaks=seq(0,366,30))+
+  xlab("Day of Year")+
+  ylab("Median Salinity (psu)")
+
+figure_save_path = "C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\salinity\\"
+
+ggsave(filename=paste0(figure_save_path,
+                       "median-salinity-regime-MVCO.png"),
+       width=800,height=400,units="px",dpi=150)
 
 
