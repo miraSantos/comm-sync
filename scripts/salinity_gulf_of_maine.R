@@ -74,6 +74,18 @@ dfsal_daily_mean = dfsal_daily_mean %>% group_by(regime,doy_numeric) %>%
   mutate(median_salinity = median(salinity_daily_mean)) %>%
   ungroup()
 
+metseasons <- c(
+  "01" = "Winter", "02" = "Winter",
+  "03" = "Spring", "04" = "Spring", "05" = "Spring",
+  "06" = "Summer", "07" = "Summer", "08" = "Summer",
+  "09" = "Fall", "10" = "Fall", "11" = "Fall",
+  "12" = "Winter")
+
+seasons = metseasons[format(dfsal_daily_mean$date, "%m")]
+dfsal_daily_mean$season = seasons
+dfsal_daily_mean$month = month(dfsal_daily_mean$date)
+
+
 
 return(list("dfsal"=dfsal_daily_mean,
             "regime_1_index"=regime_1_index,
@@ -91,16 +103,17 @@ sal = load_data(jor_bas,depth = 1)
 sal = load_data(pen_bay,depth = 1)
 
 
+
 print(sal$station)
 
-#plot daily mean of salinity
+#plot daily mean of salinity time series
 ggplot(data = sal$dfsal) +
   geom_point(aes(x = date,y = salinity_daily_mean))+
   scale_x_date(date_breaks="1 year", date_labels="%Y")+
   ggtitle(paste0("Salinity at ",as.character(sal$station)))
 
 
-#plotting regime wise day of year salinity
+#plotting regime wise weekly salinity
 ggplot(data=sal$dfsal,aes(x = week,y = salinity_daily_mean)) + 
   geom_boxplot(color="darkgreen")+ 
   facet_grid(cols=vars(regime))+
@@ -110,8 +123,18 @@ ggplot(data=sal$dfsal,aes(x = week,y = salinity_daily_mean)) +
   scale_x_discrete(breaks=seq(1,52,5))+
   ggtitle(paste0("Salinity at ",as.character(sal$station)))
 
+#plotting year wise montly salinity
+ggplot(data=sal$dfsal,aes(x = as.factor(month),y = salinity_daily_mean)) + 
+  geom_boxplot(color="darkgreen")+ 
+  facet_grid(cols=vars(year),rows=vars(factor(season,levels=c("Winter","Spring","Summer","Fall"))))+
+  xlab("Week of Year")+
+  ylab("Salinity (psu)")+
+  theme(text = element_text(size = 15))+
+  scale_x_discrete(breaks=seq(1,52,5))+
+  ggtitle(paste0("Salinity at ",as.character(sal$station)))
 
 
+# Median salinity by day of year grouped by each regime (color) 
 ggplot(data = sal$dfsal) +
   geom_spline(aes(x = doy_numeric,y = median_salinity,color=regime),size = 1)+
   scale_x_continuous(breaks=seq(0,366,30))+
@@ -123,3 +146,9 @@ ggsave(filename=paste0("figures\\environmental\\salinity\\",
               "median-salinity-regime-",as.character(sal$station),".png"),
        width=800,height=400,units="px",dpi=150)
 
+# montly salinity by year and season
+ggplot() +
+  geom_boxplot(data = na.omit(sal$dfsal),
+             aes(x = month,y=salinity_daily_mean))+
+  facet_grid(cols=vars(year),rows=vars(factor(season,levels=c("Winter","Spring","Summer","Fall"))))+
+  theme_bw()

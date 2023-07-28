@@ -1,6 +1,6 @@
-list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
+list.of.packages <- c("RColorBrewer", "lubridate",
                       "fields","ggplot2","tibbletime","dplyr","sets",
-                      "reshape2","ggformula","tidyr","moments","ggmap")
+                      "reshape2","ggformula","tidyr","moments","ggmap","broom","sf")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)

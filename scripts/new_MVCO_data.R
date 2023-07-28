@@ -4,14 +4,15 @@ list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
-source("/dos/MIT-WHOI/community_synchrony/scripts/adv_biwavelet_packages.R")
-rm(wt) #replaces wt with the correct biwavelet version (there are 2 versions)
+
+
+data_path = "C:\\Users\\Miraflor P Santos\\comm-sync\\data\\ifcb\\csv\\"
 
 #loading in counts and carbon estimates
-dfcount_class_raw <- read.csv("/dos/MIT-WHOI/community_synchrony/data/raw/CSVs/classcount_MVCO.csv",header=TRUE)
-dfcarbon_class_raw <- read.csv("/dos/MIT-WHOI/community_synchrony/data/raw/CSVs/carbon_count_MVCO.csv",header=TRUE)
-mdata_MVCO <- read.csv("/dos/MIT-WHOI/community_synchrony/data/raw/CSVs/meta_data_MVCO.csv",header=TRUE)
-dfcarbon_group_raw <- read.csv("/dos/MIT-WHOI/community_synchrony/data/raw/CSVs/carbon_group_MVCO.csv",header=TRUE)
+dfcount_class_raw <- read.csv(paste0(data_path,"count_class_MVCO.csv"),header=TRUE)
+dfcarbon_class_raw <- read.csv(paste0(data_path,"carbon_class_MVCO.csv"),header=TRUE)
+mdata_MVCO <- read.csv(paste0(data_path,"metadata_MVCO.csv"),header=TRUE)
+dfcarbon_group_raw <- read.csv(paste0(data_path,"carbon_group_MVCO.csv"),header=TRUE)
 
 
 #LOADING IN ENV
@@ -20,45 +21,42 @@ env_url = "https://raw.githubusercontent.com/miraSantos/gp_plankton_model/master
 df_env <- read.csv(env_url,sep = ",",header=T)
 df_env$date <- as.Date(df_env$time_local,format="%d-%b-%Y %H:%M:%S")
 
-group_list = c("protist_tricho","metazoan","Diatom_noDetritus","Dinoflagellate","Ciliate","NanoFlagCocco")
+shared_list = colnames(dfcarbon_class_raw)[colnames(dfcarbon_class_raw)!="pid"]
 
-mdata_MVCO$date <- as.Date(mdata_MVCO$sample_time,format="%Y-%m-%d %H:%M:%S+00:00")
-mdata_MVCO$doy_numeric=yday(mdata_MVCO$date)
-skip_flag_index = mdata_MVCO$skip==0
-pos_ml_index = mdata_MVCO$ml_analyzed >= 0
-
-#selecting columns that represent live taxa
-shared_list = colnames(dfcount_class_raw)[colnames(dfcount_class_raw)!="pid"]
-dfconc = dfcount_class_raw[,shared_list]
-dfcarbon_conc = dfcarbon_class_raw[,shared_list]
+dfconc_class = dfcount_class_raw[,shared_list]
+dfcarbon_class = dfcarbon_class_raw[,shared_list]
 dfcarbon_group = dfcarbon_group_raw[,group_list]
 
-mdata_MVCO = mdata_MVCO[pos_ml_index,]
-dfconc=dfconc[pos_ml_index,]
-dfcarbon_conc = dfcarbon_conc[pos_ml_index,]
-dfcarbon_group = dfcarbon_group[pos_ml_index,]
+mdata_MVCO$date <- as.Date(mdata_MVCO$sample_time,format="%Y-%m-%d %H:%M:%S+00:00")
 
-dfconc$date = mdata_MVCO$date
-dfcarbon_conc$date = mdata_MVCO$date 
+dfconc_class$date = mdata_MVCO$date
+dfcarbon_class$date = mdata_MVCO$date 
 dfcarbon_group$date = mdata_MVCO$date
-dfconc$ml_analyzed = mdata_MVCO$ml_analyzed
-dfcarbon_conc$ml_analyzed = mdata_MVCO$ml_analyzed
+
+dfconc_class$ml_analyzed = mdata_MVCO$ml_analyzed
+dfcarbon_class$ml_analyzed = mdata_MVCO$ml_analyzed
 dfcarbon_group$ml_analyzed = mdata_MVCO$ml_analyzed
 
-#skipping important groups
-dfconc = dfconc[skip_flag_index,]
-dfcarbon_conc = dfcarbon_conc[skip_flag_index,]
+skip_flag_index = which(mdata_MVCO$skip==0)
+
+#skipping flagged_data
+dfconc_class = dfconc_class[skip_flag_index,]
+dfcarbon_class = dfcarbon_class[skip_flag_index,]
 dfcarbon_group = dfcarbon_group[skip_flag_index,]
 
-dfconc = na.omit(dfconc)
-dfcarbon_conc = na.omit(dfcarbon_conc)
+
+dfconc_class = na.omit(dfconc_class)
+dfcarbon_class = na.omit(dfcarbon_class)
 dfcarbon_group = na.omit(dfcarbon_group)
 
+###########################################################################################
+
+group_list = c("protist_tricho","metazoan","Diatom_noDetritus","Dinoflagellate","Ciliate","NanoFlagCocco")
 
 #Computing daily concentrations
-dfconc = dfconc %>% mutate(date=floor_date(date)) %>% group_by(date) %>% reframe(across(all_of(shared_list), ~ sum(.)/sum(ml_analyzed)))
-dfcarbon_conc = dfcarbon_conc %>% mutate(date=floor_date(date)) %>% group_by(date) %>% reframe(across(all_of(shared_list), ~ sum(.)/sum(ml_analyzed)))
-dfcarbon_group = dfcarbon_group %>% mutate(date=floor_date(date)) %>% group_by(date) %>% reframe(across(group_list, ~ sum(.)/sum(ml_analyzed)))
+dfconc_class = dfconc_class %>% mutate(date=floor_date(date)) %>% group_by(date) %>% reframe(across(all_of(shared_list), ~ sum(.)/sum(ml_analyzed)))
+dfcarbon_class = dfcarbon_class %>% mutate(date=floor_date(date)) %>% group_by(date) %>% reframe(across(all_of(shared_list), ~ sum(.)/sum(ml_analyzed)))
+dfcarbon_group = dfcarbon_group %>% mutate(date=floor_date(date)) %>% group_by(date) %>% reframe(across(all_of(group_list), ~ sum(.)/sum(ml_analyzed)))
 
 
 df_env$doy_numeric=yday(df_env$date)
@@ -67,14 +65,23 @@ head(df_env)
 df_env=df_env %>% group_by(date) %>%   summarise(across(c(wind_speed,wind_dir,solar,temp_beam,salinity_beam),function(x) mean(x, na.rm=TRUE)),.groups="drop")
 head(df_env)
 
-dfconc <- merge(dfconc,df_env,by="date")
-dfcarbon_conc <- merge(dfcarbon_conc,df_env,by="date")
+dfconc_class <- merge(dfconc_class,df_env,by="date")
+dfcarbon_class <- merge(dfcarbon_class,df_env,by="date")
 dfcarbon_group <- merge(dfcarbon_group,df_env,by="date")
+
 env_index= colnames(df_env)[(colnames(df_env) != "date" & colnames(df_env) != "doy_numeric")]
 
-dfcarbon_conc$date = as.Date(dfcarbon_conc$date)
-dfconc$date = as.Date(dfconc$date)
+dfcarbon_class$date = as.Date(dfcarbon_class$date)
+dfconc_class$date = as.Date(dfconc_class$date)
 dfcarbon_group$date = as.Date(dfcarbon_group$date)
+
+save_r_path = "C:\\Users\\Miraflor P Santos\\comm-sync\\data\\ifcb\\r_objects\\unfilled\\"
+save(dfcarbon_group,group_list,file=paste0(save_r_path,"2023_Jul_28_dfcarbon_group.RData"))
+save(dfconc_class,dfcarbon_class,shared_list,file=paste0(save_r_path,"2023_Jul_28_dfcount_index.RData"))
+write.csv(dfconc_class,file=paste0(save_r_path,"dfconc_class_2023_Jul_28.csv"))
+write.csv(dfcarbon_class,file=paste0(save_r_path,"dfcarbon_class_2023_Jul_28.csv"))
+
+
 #fill gaps
 fill_gaps <- function(df,index_list){
 df_freq <- df %>% 
@@ -87,11 +94,13 @@ df_freq <- df %>%
   mutate(across(all_of(index_list),~replace_na(.,mean(.,na.rm=T))))
   return(df_freq)
 }
-dfconc = fill_gaps(dfconc,c(shared_list,env_index))
-dfcarbon_conc = fill_gaps(dfcarbon_conc,c(shared_list,env_index))
+dfconc_class = fill_gaps(dfconc_class,c(shared_list,env_index))
+dfcarbon_class = fill_gaps(dfcarbon_class,c(shared_list,env_index))
 dfcarbon_group = fill_gaps(dfcarbon_group,c(group_list,env_index))
 
-save(dfcarbon_group,group_list,file="/dos/MIT-WHOI/community_synchrony/data/r_objects/2023_Jul_19_dfcarbon_group.RData")
-save(dfconc,dfcarbon_conc,shared_list,file="/dos/MIT-WHOI/community_synchrony/data/r_objects/2023_Jul_19_dfcount_index.RData")
-write.csv(dfconc,file="/dos/MIT-WHOI/community_synchrony/data/dfconc_2023_Jul_19.csv")
-write.csv(dfcarbon_conc,file="/dos/MIT-WHOI/community_synchrony/data/dfcarbon_conc_2023_Jul_19.csv")
+save_r_path = "C:\\Users\\Miraflor P Santos\\comm-sync\\data\\ifcb\\r_objects\\filled\\"
+save(dfcarbon_group,group_list,file=paste0(save_r_path,"2023_Jul_28_dfcarbon_group.RData"))
+save(dfconc_class,dfcarbon_class,shared_list,file=paste0(save_r_path,"2023_Jul_28_dfcount_index.RData"))
+write.csv(dfconc_class,file=paste0(save_r_path,"dfconc_class_2023_Jul_28.csv"))
+write.csv(dfcarbon_class,file=paste0(save_r_path,"dfcarbon_class_2023_Jul_28.csv"))
+
