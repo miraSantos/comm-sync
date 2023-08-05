@@ -64,6 +64,7 @@ regime_2_end = 2018
 regime_1_index = (which(dfsal_daily_mean$year < regime_1_end))
 regime_2_index = (which((dfsal_daily_mean$year >= regime_1_end)&(dfsal_daily_mean$year < regime_2_end)))
 regime_3_index = (which(dfsal_daily_mean$year >= regime_2_end))
+
 dfsal_daily_mean$regime <- NaN
 
 dfsal_daily_mean$regime[regime_1_index] = paste0("2006 - ",as.character(regime_1_end-1))
@@ -94,15 +95,50 @@ return(list("dfsal"=dfsal_daily_mean,
             "station"= dfsal$station[1]))
 }
 
-sal = load_data(bo1_buoy,depth = 50)
+wmg = load_data(bo1_buoy,depth = 50)
 
-sal = load_data(ma_bay,depth = 20)
+mbay = load_data(ma_bay,depth = 20)
 
-sal = load_data(jor_bas,depth = 1)
+jorb = load_data(jor_bas,depth = 1)
 
-sal = load_data(pen_bay,depth = 1)
+pbay = load_data(pen_bay,depth = 1)
+
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 
+
+ggplot(data = wmg$dfsal[wmg$dfsal$season == "Summer",])+
+  geom_boxplot(aes(x=week,y=salinity_daily_mean))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Salinity")+
+  xlab("Week of Year")+
+  ggtitle(paste0("Summer Salinity at "," Western Maine Gulf ",as.character(wmg$station)))
+
+ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\salinity\\summer-salinity-WMG.png",
+       width = 2000,height=500,units="px",dpi =175)
+
+
+ggplot(data = mbay$dfsal[mbay$dfsal$season == "Summer",])+
+  geom_boxplot(aes(x=week,y=salinity_daily_mean))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Salinity")+
+  xlab("Week of Year")+
+  ggtitle(paste0("Summer Salinity at "," MA Bay ",as.character(mbay$station)))
+
+
+ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\salinity\\summer-salinity-MA-bay.png",
+       width = 2000,height=500,units="px",dpi =175)
+
+
+
+ggplot()+
+  geom_point(data = wmg$dfsal,aes(x = date,y=salinity_daily_mean),color=cbbPalette[1],size=0.8)+
+  geom_point(data = ma_bay$dfsal,aes(x = date,y=salinity_daily_mean),color=cbbPalette[2],size=0.8,alpha=0.5)+
+  geom_point(data = dfcarbon_group,aes(x = date,y=salinity_beam),color=cbbPalette[4],size=0.8,alpha=0.5)
+  geom_point(data = ,aes(),color=cbbPalette[3],size=0.8,alpha=0.5)+
+    
 
 print(sal$station)
 
