@@ -49,99 +49,155 @@ dfcarbon_class$regime[regime_1_index] = paste0("2006 - ",as.character(regime_1_e
 dfcarbon_class$regime[regime_2_index] = paste0(as.character(regime_1_end)," - ",as.character(regime_2_end-1))
 dfcarbon_class$regime[regime_3_index] = paste0(as.character(regime_2_end)," - 2022")
 
-
-shared_diatoms <- intersect(diatom_index,colnames(dfcarbon_class))
-df_ranked <- dfcarbon_class %>% select(all_of(c("regime","month",shared_diatoms))) %>%
-  group_by(regime,month) %>% 
-  summarize(across(all_of(shared_diatoms),sum))%>%
-  pivot_longer(cols=shared_diatoms,names_to=c("Species"),values_to=c("Concentration")) %>%
-  group_by(regime,month)%>%
-  mutate(rank = rank(-Concentration))%>%
-  ungroup()
-
-df_ranked$month <- as.numeric(df_ranked$month)
-df_ranked$rank <- as.integer(df_ranked$rank)
-
-ggplot(df_ranked, aes(x = month, y = rank, color = Species)) +
-  facet_grid(cols=vars(regime))+
-  ylim(3,1)+
-  geom_bump(size=2)+
-  scale_x_continuous(breaks=seq(1,12,1))+
-  scale_fill_brewer(palette="Set3")
-
-
+################ DIATOMS PER REGIME AND SEASON
 shared_diatoms <- intersect(diatom_index,colnames(dfcarbon_class))
 df_ranked <- dfcarbon_class %>% select(all_of(c("regime","season_numeric",shared_diatoms))) %>%
   drop_na()%>%
-  group_by(regime,season_numeric) %>% 
-  summarize(across(all_of(shared_diatoms),sum))%>%
+  arrange(regime,season_numeric)%>%
+  group_by(regime,season_numeric)%>% 
+  summarize(across(all_of(shared_diatoms),sum),.groups='keep')%>%
   pivot_longer(cols=shared_diatoms,names_to=c("Species"),values_to=c("Concentration"))%>%
-  group_by(regime,season_numeric)%>%
-  mutate(rank = rank(-Concentration))%>%
-  ungroup()
-
-df_ranked$rank <- as.integer(df_ranked$rank)
-
-ggplot(df_ranked, aes(x = season_numeric, y = rank, color = Species)) +
-  facet_grid(cols=vars(regime))+
-  geom_bump(size=2)+
-  scale_fill_brewer(palette="Set3")
-
-
-groups <- c("Diatom_noDetritus","Dinoflagellate","NanoFlagCocco","Ciliate","metazoan")
-df_ranked <- dfcarbon_group %>% select(all_of(c("regime","season_numeric",groups))) %>%
-  drop_na()%>%
   group_by(regime,season_numeric) %>% 
-  summarize(across(all_of(groups),sum))%>%
-  pivot_longer(cols=groups,names_to=c("func_group"),values_to=c("Concentration"))%>%
-  group_by(regime,season_numeric)%>%
-  mutate(rank = rank(-Concentration))%>%
+  mutate(rank = rank(-Concentration,ties.method = "max"))%>%
   ungroup()
 
 df_ranked$rank <- as.integer(df_ranked$rank)
 
-ggplot(df_ranked, aes(x = season_numeric, y = rank, color = func_group)) +
+n <- 14
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = sample(unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals))))
+
+ggplot(df_ranked[df_ranked$rank <= 5,], aes(x = season_numeric, y = rank, color = Species)) +
   facet_grid(cols=vars(regime))+
   geom_bump(size=2)+
-  scale_y_reverse(limits = c(5,1))+
-  scale_fill_brewer(palette="Set3")
+  geom_point(size=3)+
+  scale_y_reverse()+
+  scale_color_manual(values = col_vector)
+
+ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\bump-diatoms-regime.png",
+       width = 1400,height=800,units="px",dpi =200)
+  
 
 
-groups <- c("Diatom_noDetritus","Dinoflagellate","NanoFlagCocco","Ciliate","metazoan")
-df_ranked <- dfcarbon_group %>% select(all_of(c("year","season_numeric",groups))) %>%
+
+### DIATOMS PER YEAR AND SEASON
+
+df_ranked <- dfcarbon_class %>% select(all_of(c("year","season_numeric",shared_diatoms))) %>%
   drop_na()%>%
-  group_by(regime,season_numeric) %>% 
-  summarize(across(all_of(groups),sum))%>%
-  pivot_longer(cols=groups,names_to=c("func_group"),values_to=c("Concentration"))%>%
-  group_by(regime,season_numeric)%>%
-  mutate(rank = rank(-Concentration))%>%
-  ungroup()
-
-df_ranked$rank <- as.integer(df_ranked$rank)
-
-ggplot(df_ranked, aes(x = season_numeric, y = rank, color = func_group)) +
-  facet_grid(cols=vars(regime))+
-  geom_bump(size=2)+
-  scale_y_reverse(limits = c(5,1))+
-  scale_fill_brewer(palette="Set3")
-
-
-
-groups <- c("Diatom_noDetritus","Dinoflagellate","NanoFlagCocco","Ciliate","metazoan")
-df_ranked <- dfcarbon_group %>% select(all_of(c("year","season_numeric",groups))) %>%
-  drop_na()%>%
+  arrange(year,season_numeric)%>%
+  group_by(year,season_numeric)%>% 
+  summarize(across(all_of(shared_diatoms),sum),.groups='keep')%>%
+  pivot_longer(cols=shared_diatoms,names_to=c("Species"),values_to=c("Concentration"))%>%
   group_by(year,season_numeric) %>% 
-  summarize(across(all_of(groups),sum))%>%
-  pivot_longer(cols=groups,names_to=c("func_group"),values_to=c("Concentration"))%>%
-  group_by(year,season_numeric)%>%
-  mutate(rank = rank(-Concentration))%>%
+  mutate(rank = rank(-Concentration,ties.method = "max"))%>%
   ungroup()
 
 df_ranked$rank <- as.integer(df_ranked$rank)
 
-ggplot(df_ranked, aes(x = season_numeric, y = rank, color = func_group)) +
+n <- 14
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+
+ggplot(df_ranked[df_ranked$rank <= 3,], aes(x = season_numeric, y = rank, color = Species,fill = Species)) +
   facet_grid(cols=vars(year))+
   geom_bump(size=2)+
-  ylim(1,5)+
+  geom_point(size=3)+
   scale_y_reverse()+
-  scale_fill_brewer(palette="Set3")
+  scale_color_manual(values = col_vector)
+
+ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\bump-diatoms-year.png",
+       width = 4000,height=800,units="px",dpi =200)
+
+x[x != "b"]  # without elements that are "b"
+
+
+
+################ DINOFLAGELLATES PER REGIME AND SEASON
+shared_index<- intersect(dino_index,colnames(dfcarbon_class))
+shared_index <- shared_index[shared_index != "Dinophyceae"]
+df_ranked <- dfcarbon_class %>% select(all_of(c("regime","season_numeric",shared_index))) %>%
+  drop_na()%>%
+  arrange(regime,season_numeric)%>%
+  group_by(regime,season_numeric)%>% 
+  summarize(across(all_of(shared_index),sum),.groups='keep')%>%
+  pivot_longer(cols=shared_index,names_to=c("Species"),values_to=c("Concentration"))%>%
+  group_by(regime,season_numeric) %>% 
+  mutate(rank = rank(-Concentration,ties.method = "max"))%>%
+  ungroup()
+
+df_ranked$rank <- as.integer(df_ranked$rank)
+
+n <- 14
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+
+ggplot(df_ranked[df_ranked$rank <= 1,], aes(x = season_numeric, y = rank, color = Species)) +
+  facet_grid(cols=vars(regime))+
+  geom_bump(size=2)+
+  geom_point(size=3)+
+  scale_y_reverse()+
+  scale_color_manual(values = col_vector)
+
+sggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\bump-dino-regime.png",
+       width = 1400,height=800,units="px",dpi =200)
+
+
+### DINO PER YEAR AND SEASON
+shared_index <- intersect(dino_index,colnames(dfcarbon_class))
+shared_index <- shared_index[shared_index != "Dinophyceae"]
+df_ranked <- dfcarbon_class %>% select(all_of(c("year","season_numeric",shared_index))) %>%
+  drop_na()%>%
+  arrange(year,season_numeric)%>%
+  group_by(year,season_numeric)%>% 
+  summarize(across(all_of(shared_index),sum),.groups='keep')%>%
+  pivot_longer(cols=shared_index,names_to=c("Species"),values_to=c("Concentration"))%>%
+  group_by(year,season_numeric) %>% 
+  mutate(rank = rank(-Concentration,ties.method = "max"))%>%
+  ungroup()
+
+df_ranked$rank <- as.integer(df_ranked$rank)
+
+n <- 14
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+
+ggplot(df_ranked[df_ranked$rank <= 3,], aes(x = season_numeric, y = rank, color = Species,fill = Species)) +
+  facet_grid(cols=vars(year))+
+  geom_bump(size=2)+
+  geom_point(size=3)+
+  scale_y_reverse()+
+  scale_color_manual(values = col_vector)
+
+ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\bump-dino-year.png",
+       width = 4000,height=800,units="px",dpi =170)
+
+
+################ ciliates PER REGIME AND SEASON
+shared_index<- intersect(cilia_index,colnames(dfcarbon_class))
+df_ranked <- dfcarbon_class %>% select(all_of(c("regime","season_numeric",shared_index))) %>%
+  drop_na()%>%
+  arrange(regime,season_numeric)%>%
+  group_by(regime,season_numeric)%>% 
+  summarize(across(all_of(shared_index),sum),.groups='keep')%>%
+  pivot_longer(cols=shared_index,names_to=c("Species"),values_to=c("Concentration"))%>%
+  group_by(regime,season_numeric) %>% 
+  mutate(rank = rank(-Concentration,ties.method = "max"))%>%
+  ungroup()
+
+df_ranked$rank <- as.integer(df_ranked$rank)
+
+n <- 14
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+
+ggplot(df_ranked[df_ranked$rank<=5,], aes(x = season_numeric, y = rank, color = Species)) +
+  facet_grid(cols=vars(regime))+
+  geom_bump(size=2)+
+  geom_point(size=3)+
+  scale_y_reverse()+
+  scale_color_manual(values = col_vector)
+
+ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\bump-cilia-regime.png",
+       width = 1400,height=800,units="px",dpi =200)
+
+

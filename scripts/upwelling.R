@@ -1,5 +1,5 @@
 
-list.of.packages <- c("lubridate","ggplot2","dplyr","gridExtra")
+list.of.packages <- c("lubridate","ggplot2","dplyr","gridExtra","tidyr","RColorBrewer")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
@@ -206,3 +206,110 @@ ggplot(data = df_ui) + geom_point(aes(x = year_list,y=num_days),color="red",size
 
 ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\wind\\summer-upwelling_days_avail.png",
        width = 2000,height=500,units="px",dpi =175)
+
+
+
+#########################################################
+## EAST - WEST UPWELLING
+year_list = unique(df_wind$year)
+year_list = year_list[year_list > 2005]
+num_years = length(year_list)
+num_days = 92
+
+cui_list = matrix(NaN,nrow=num_days,ncol=num_years)
+colnames(cui_list) <- year_list
+
+for (year in 1:num_years) {
+  
+  yearly_summer = which((df_wind$season=="Summer")&(df_wind$year==year_list[year]))
+
+  for (day in 1:num_days){
+  
+  ui_list[year] = sum(df_wind$mean_stress_real[yearly_summer]/(density*coriolis*num_days))
+  cui_list[day,year] = sum(df_wind$mean_stress_real[yearly_summer[1:day]]/(density*coriolis)) 
+  }
+}
+
+df_wind$doy_numeric = yday(df_wind$date)
+cui_list_doy <- cbind(cui_list,df_wind$doy_numeric[yearly_summer])
+
+cui_long <- gather(as.data.frame(cui_list_doy),year,cui,"2006":"2018",factor_key=TRUE)
+str(cui_long)
+colnames(cui_long) <- c("doy_numeric","year","cui")
+
+
+n <- 14
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+col_vector = rainbow(14)
+ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui,color=year),size=2)+
+  scale_color_manual(values=col_vector)+
+  xlab("Day of Year")+
+  ylab("CUI (m^2/s)")+
+  ggtitle("Summer CUI (Eastward and Westward")
+
+
+ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui),size=2)+
+  facet_grid(cols=vars(year))+
+  # scale_x_discrete(breaks=seq(152,243,20))+
+  xlab("Day of Year")+
+  ylab("CUI (m^2/s)")+
+  ggtitle("Summer CUI (Eastward and Westward)")
+
+
+ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\wind\\summer-yearly-east-west-upwelling.png",
+       width = 2300,height=500,units="px",dpi =175)
+
+
+#########################################################
+## NORTH - SOUTH UPWELLING
+year_list = unique(df_wind$year)
+year_list = year_list[year_list > 2005]
+num_years = length(year_list)
+num_days = 92
+
+cui_list = matrix(NaN,nrow=num_days,ncol=num_years)
+colnames(cui_list) <- year_list
+
+for (year in 1:num_years) {
+  
+  yearly_summer = which((df_wind$season=="Summer")&(df_wind$year==year_list[year]))
+  
+  for (day in 1:num_days){
+    
+    ui_list[year] = sum(df_wind$mean_stress_imag[yearly_summer]/(density*coriolis*num_days))
+    cui_list[day,year] = sum(df_wind$mean_stress_imag[yearly_summer[1:day]]/(density*coriolis)) 
+  }
+}
+
+df_wind$doy_numeric = yday(df_wind$date)
+cui_list_doy <- cbind(cui_list,df_wind$doy_numeric[yearly_summer])
+
+cui_long <- gather(as.data.frame(cui_list_doy),year,cui,"2006":"2018",factor_key=TRUE)
+str(cui_long)
+colnames(cui_long) <- c("doy_numeric","year","cui")
+
+
+n <- 14
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+col_vector = rainbow(14)
+ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui,color=year),size=2)+
+  scale_color_manual(values=col_vector)+
+  xlab("Day of Year")+
+  ylab("CUI (m^2/s)")+
+  ggtitle("Summer CUI (Eastward and Westward)")
+
+
+ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui),size=2)+
+  facet_grid(cols=vars(year))+
+  # scale_x_discrete(breaks=seq(152,243,20))+
+  xlab("Day of Year")+
+  ylab("CUI (m^2/s)")+
+  ggtitle("Summer CUI (Northward and Southward)")
+
+
+ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\wind\\summer-yearly-north-south-upwelling.png",
+       width = 2300,height=500,units="px",dpi =175)
+
+  

@@ -17,7 +17,11 @@ cocco_index <- create_groups("Coccolithophore")
 cilia_index <- create_groups("Ciliate")
 flagellate_index <- create_groups("flagellate")
 protist_tricho_index <- create_groups("protist_tricho")
+protist_tricho_index <- create_groups("")
 
 
 diatom_index <- groups$CNN_classlist[groups["Diatom_noDetritus"]==1]
 dino_index <- groups$CNN_classlist[groups["Dinoflagellate"]==1]
+cilia_index <-groups$CNN_classlist[groups["Ciliate"]==1]
+cocco_index <-groups$CNN_classlist[groups["Coccolithophore"]==1]
+
