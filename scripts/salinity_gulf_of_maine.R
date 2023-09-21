@@ -16,9 +16,13 @@ bo1_buoy <- "http://www.neracoos.org/erddap/tabledap/B01_sbe37_all.csv?station%2
 #MA bay station A01 (2006-2022)
 ma_bay <- "http://www.neracoos.org/erddap/tabledap/A01_sbe37_all.csv?station%2Ctime%2Cmooring_site_desc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2023-07-24T20%3A30%3A00Z"
 
+ma_bay_chl <- "http://www.neracoos.org/erddap/tabledap/A01_optics_s_all.csv?station%2Cmooring_site_desc%2Ctime%2Cchlorophyll%2Cchlorophyll_qc%2Cturbidity%2Cturbidity_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2003-01-01T00%3A00%3A00Z&time%3C=2023-09-08T17%3A00%3A00Z"
 
-
-##################### EXTRA NERACOOS DATASETS
+#Northeast channel N01 
+nor_chan <- "http://www.neracoos.org/erddap/tabledap/N01_sbe37_all.csv?station%2Ctime%2Cmooring_site_desc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2021-11-04T21%3A00%3A00Z"
+#WMG 
+wmg_chl<-"http://www.neracoos.org/erddap/tabledap/B01_optics_hist.csv?station%2Ctime%2Cmooring_site_desc%2Cwater_depth%2Csolar_zenith_angle%2Csolar_zenith_angle_qc%2CEd_PAR%2CEd_PAR_qc%2Cchlorophyll%2Cchlorophyll_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2005-01-01T00%3A00%3A00Z&time%3C=2023-09-23T19%3A00%3A00Z"
+  ##################### EXTRA NERACOOS DATASETS
 #gulf of maine central (2019-2021)
 gom <-"http://www.neracoos.org/erddap/tabledap/E07_met_all.csv?station%2Cmooring_site_desc%2Cwater_depth%2Ctime%2Cair_temperature%2Cair_temperature_qc%2Cwind_gust%2Cwind_gust_qc%2Cwind_min%2Cwind_min_qc%2Cwind_speed%2Cwind_speed_qc%2Cwind_gust_1s%2Cwind_gust_1s_qc%2Cwind_direction%2Cwind_direction_qc%2Cwind_percent_good%2Cwind_percent_good_qc%2Ctime_created%2Ctime_modified%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2021-11-05T10%3A00%3A00Z"
 #gulf of maine station E01 (2021-2022)
@@ -95,6 +99,8 @@ return(list("dfsal"=dfsal_daily_mean,
             "station"= dfsal$station[1]))
 }
 
+basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
+
 wmg = load_data(bo1_buoy,depth = 50)
 
 mbay = load_data(ma_bay,depth = 20)
@@ -103,19 +109,54 @@ jorb = load_data(jor_bas,depth = 1)
 
 pbay = load_data(pen_bay,depth = 1)
 
+norchan=load_data(nor_chan,depth = 9.96921e+36)
+
+ggplot(data = norchan$dfsal[norchan$dfsal$season == "Summer",])+
+  geom_boxplot(aes(x=week,y=salinity_daily_mean))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Salinity")+
+  xlab("Week of Year")+
+  ggtitle(paste0("Summer Salinity at "," Northeast Channel ",as.character(norchan$station)))
+
+ggsave(filename=paste0(basepath,"figures/environmental/salinity/summer-salinity-norchan-N01.png"),
+       width = 2000,height=700,units="px",dpi =175)
+
+
+ggplot(data = norchan$dfsal[norchan$dfsal$season == "Spring",])+
+  geom_boxplot(aes(x=week,y=salinity_daily_mean))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Salinity")+
+  xlab("Week of Year")+
+  ggtitle(paste0("Spring Salinity at "," Northeast Channel ",as.character(norchan$station)))
+
+ggsave(filename=paste0(basepath,"figures/environmental/salinity/spring-salinity-norchan-N01.png"),
+       width = 2000,height=700,units="px",dpi =175)
+
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
+
+ggplot(data = wmg$dfsal[wmg$dfsal$season == "Spring",])+
+  geom_boxplot(aes(x=week,y=salinity_daily_mean))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylim(31,33)+
+  ylab("Salinity")+
+  xlab("Week of Year")+
+  ggtitle(paste0("Spring Salinity at "," Western Maine Gulf ",as.character(wmg$station)))
 
 
 ggplot(data = wmg$dfsal[wmg$dfsal$season == "Summer",])+
   geom_boxplot(aes(x=week,y=salinity_daily_mean))+
   facet_grid(cols=vars(year))+
   scale_x_discrete(breaks=seq(23,36,5))+
+  ylim(31.3,32.7)+
   ylab("Salinity")+
   xlab("Week of Year")+
   ggtitle(paste0("Summer Salinity at "," Western Maine Gulf ",as.character(wmg$station)))
 
-ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\salinity\\summer-salinity-WMG.png",
+ggsave(filename=paste0(basepath,"figures/environmental/salinity/summer-salinity-WMG.png"),
        width = 2000,height=500,units="px",dpi =175)
 
 
@@ -188,3 +229,121 @@ ggplot() +
              aes(x = month,y=salinity_daily_mean))+
   facet_grid(cols=vars(year),rows=vars(factor(season,levels=c("Winter","Spring","Summer","Fall"))))+
   theme_bw()
+
+
+############################
+#MA BAY CHL STATION A01
+
+df_chl <- read.csv(url(ma_bay_chl))[-1,]
+
+rownames(df_chl) <- NULL
+
+#create date columns
+df_chl$date <- as.Date(df_chl$time,format="%Y-%m-%dT%H:%M:%SZ")
+df_chl$year <- year(df_chl$date)
+df_chl$doy_numeric <- yday(df_chl$date)
+df_chl$week <- week(df_chl$date)
+df_chl$month<- month(df_chl$date)
+df_chl$depth = as.numeric(df_chl$depth)
+df_chl$chlorophyll = as.numeric(df_chl$chlorophyll)
+
+metseasons <- c(
+  "01" = "Winter", "02" = "Winter",
+  "03" = "Spring", "04" = "Spring", "05" = "Spring",
+  "06" = "Summer", "07" = "Summer", "08" = "Summer",
+  "09" = "Fall", "10" = "Fall", "11" = "Fall",
+  "12" = "Winter")
+
+seasons = metseasons[format(df_chl$date, "%m")]
+df_chl$season = seasons
+df_chl$season_numeric = NaN
+df_chl$season_numeric[df_chl$season == "Winter"] = 1
+df_chl$season_numeric[df_chl$season == "Spring"] = 2
+df_chl$season_numeric[df_chl$season == "Summer"] = 3
+df_chl$season_numeric[df_chl$season == "Fall"] = 4
+
+flag_index = which((df_chl$chlorophyll_qc == 0)&(df_chl$season=="Summer"))
+
+ggplot(data = df_chl[flag_index,]) + 
+  geom_point(aes(x = week, y = chlorophyll^(1/3)))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,15))+
+  ylab("Chl^(1/3) (ug/L)")+
+  ggtitle("Summer Chlorophyll Concentrations at MA Bay (A01 Station)")
+  
+ggplot(data = df_chl[flag_index,]) + 
+  geom_boxplot(aes(x = as.factor(month), y = chlorophyll^(1/3)))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(6,8,1))+
+  ylab("Chl^(1/3) (ug/L)")+
+  xlab("Month")+
+  ggtitle("Summer Chlorophyll Concentrations at MA Bay (A01 Station)")
+
+ggsave(filename="/home/mira/MIT-WHOI/github_repos/comm-sync/figures/environmental/summer_chl_MA_bay.png",
+       width = 2000,height=800,units="px",dpi =175)
+
+
+df_chl <- read.csv(url(wmg_chl))[-1,]
+
+rownames(df_chl) <- NULL
+
+#create date columns
+df_chl$date <- as.Date(df_chl$time,format="%Y-%m-%dT%H:%M:%SZ")
+df_chl$year <- year(df_chl$date)
+df_chl$doy_numeric <- yday(df_chl$date)
+df_chl$week <- week(df_chl$date)
+df_chl$month<- month(df_chl$date)
+df_chl$depth = as.numeric(df_chl$depth)
+df_chl$chlorophyll = as.numeric(df_chl$chlorophyll)
+
+metseasons <- c(
+  "01" = "Winter", "02" = "Winter",
+  "03" = "Spring", "04" = "Spring", "05" = "Spring",
+  "06" = "Summer", "07" = "Summer", "08" = "Summer",
+  "09" = "Fall", "10" = "Fall", "11" = "Fall",
+  "12" = "Winter")
+
+seasons = metseasons[format(df_chl$date, "%m")]
+df_chl$season = seasons
+df_chl$season_numeric = NaN
+df_chl$season_numeric[df_chl$season == "Winter"] = 1
+df_chl$season_numeric[df_chl$season == "Spring"] = 2
+df_chl$season_numeric[df_chl$season == "Summer"] = 3
+df_chl$season_numeric[df_chl$season == "Fall"] = 4
+
+flag_index = which((df_chl$chlorophyll_qc == 0)&(df_chl$season=="Summer"))
+
+ggplot(data = df_chl[flag_index,]) + 
+  geom_point(aes(x = week, y = chlorophyll^(1/3)))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,15))+
+  ylab("Chl^(1/3) (ug/L)")+
+  ggtitle("Summer Chlorophyll Concentrations at Western Maine Gulf (B01 Station)")
+
+ggplot(data = df_chl[flag_index,]) + 
+  geom_boxplot(aes(x = as.factor(month), y = chlorophyll^(1/3)))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(6,8,1))+
+  ylab("Chl^(1/3) (ug/L)")+
+  xlab("Month")+
+  ggtitle("Summer Chlorophyll Concentrations at Western Maine Gulf (B01 Station)")
+
+ggsave(filename="/home/mira/MIT-WHOI/github_repos/comm-sync/figures/environmental/summer_chl_wmg.png",
+       width = 2000,height=800,units="px",dpi =175)
+
+
+
+#NORTHEAST CHANNEL
+
+dfsal <- read.csv(url(norchan))[-1,]
+#reset index
+rownames(dfsal) <- NULL
+
+#create date columns
+dfsal$date <- as.Date(dfsal$time,format="%Y-%m-%dT%H:%M:%SZ")
+dfsal$year <- year(dfsal$date)
+dfsal$doy_numeric <- yday(dfsal$date)
+dfsal$week <- week(dfsal$date)
+
+dfsal$salinity = as.numeric(dfsal$salinity)
+dfsal$depth = as.numeric(dfsal$depth)

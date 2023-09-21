@@ -1,25 +1,16 @@
 list.of.packages <- c("ggplot2","remotes","knitr","rmarkdown",
-                      "readxl","sf","lubridate")
+                      "readxl","lubridate","tidyr","sf")
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
-remotes::install_github("noaa-edab/ecodata",build_vignettes=TRUE)
 lapply(list.of.packages, require, character.only = TRUE)
+remotes::install_github("noaa-edab/ecodata",build_vignettes=TRUE)
+remotes::install_github("BigelowLab/ecomon")
 
-############### EXPLORING ecomon salinity data
+basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/data/ecomon_data/"
 
-load("C:\\Users\\Miraflor P Santos\\comm-sync\\ecomon_data\\seasonal_oisst_anom.rda")
-
-ggplot(data= seasonal_oisst_anom[(seasonal_oisst_anom$Var=="Summer")&
-                                   (seasonal_oisst_anom$EPU=="MAB"),]) +
-  geom_point(aes(x = Time, y = Value))+
-  ggtitle("Summer SST Anomaly")
-
-
-
-dfeco<-read_excel("C:\\Users\\Miraflor P Santos\\comm-sync\\ecomon_data\\EcoMon_Plankton_Data_v3_7_dnd.xlsx",
+dfeco<-read_excel(paste0(basepath,"EcoMon_Plankton_Data_v3_7_dnd.xlsx"),
                   sheet = 3)
-
 dfeco$date <- as.Date(dfeco$date,format="%Y-%m-%d UTC")
 dfeco$year <- year(dfeco$date)
 dfeco$doy_numeric <- yday(dfeco$date)
@@ -34,7 +25,7 @@ metseasons <- c(
   "12" = "Winter")
 
 seasons = metseasons[format(dfeco$date, "%m")]
-dfeco$season = seasons)
+dfeco$season = seasons
 
 
 regime_1_end = 2012
@@ -78,13 +69,12 @@ ggplot() +
   scale_color_gradient(low="blue", high="red")
 
 
-nes_shp <- read_sf("C:\\Users\\Miraflor P Santos\\comm-sync\\ecomon_data\\lme.shp")
+nes_shp <- read_sf(paste0(basepath,"../shapefile/lme.shp"))
 
 
 nes_shp_cropped <- st_crop(nes_shp, xmin = lon_min, xmax = lon_max,
                            ymin = lat_min, ymax = lat_max)
 
-#
 ggplot() +
    geom_sf(data = nes_shp_cropped)+
   geom_point(data = na.omit(dfeco[mvco_recent,]),
@@ -99,4 +89,17 @@ ggplot(data = dfeco[mvco_recent,]) +
   geom_boxplot(aes(x = as.factor(doy_numeric), y = sfc_salt))+
   scale_x_discrete(breaks = seq(0,366,20))+
   facet_grid(cols=vars(year))
+
+
+############### EXPLORING ecomon salinity data
+
+load("C:\\Users\\Miraflor P Santos\\comm-sync\\ecomon_data\\seasonal_oisst_anom.rda")
+
+ggplot(data= seasonal_oisst_anom[(seasonal_oisst_anom$Var=="Summer")&
+                                   (seasonal_oisst_anom$EPU=="MAB"),]) +
+  geom_point(aes(x = Time, y = Value))+
+  ggtitle("Summer SST Anomaly")
+
+
+
 
