@@ -1,12 +1,11 @@
 
-save_r_path = "C:\\Users\\Miraflor P Santos\\comm-sync\\data\\ifcb\\r_objects\\unfilled\\"
+save_r_path = "/home/mira/MIT-WHOI/github_repos/comm-sync/data/ifcb/r_objects/unfilled/"
 load(paste0(save_r_path,"2023_Jul_28_dfcarbon_group.RData"))
 load(paste0(save_r_path,"2023_Jul_28_dfcount_index.RData"))
 
-
 list.of.packages <- c("RColorBrewer", "lubridate","ggplot2",
                       "tibbletime","dplyr","sets",
-                      "reshape2","ggformula","tidyr","ggbump","purrr")
+                      "reshape2","tidyr","ggbump","purrr")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
@@ -23,7 +22,7 @@ dfcarbon_class$season = seasons
 
 ################################################################################
 ### PLOTTING ENVIRONMENTAL VARIABLES BY SEASON AND YEAR
-
+################################################################################
 ggplot(data=dfcarbon_group[dfcarbon_group$season=="Summer",], aes(x=week))+
   geom_boxplot(aes(y=AvgWindDir))+  facet_grid(cols=vars(year))+
   scale_x_discrete(breaks=seq(23,36,5))+
@@ -66,9 +65,10 @@ ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental
        width = 2000,height=500,units="px",dpi =175)
 
 
-##########################
-#SUMMER-BIO
 
+################################################################################
+#SUMMER-BIO
+################################################################################
 
 ggplot(data=dfcarbon_group[dfcarbon_group$season=="Summer",], aes(x=week))+
   geom_boxplot(aes(y=protist_tricho))+  facet_grid(cols=vars(year))+
@@ -78,7 +78,7 @@ ggplot(data=dfcarbon_group[dfcarbon_group$season=="Summer",], aes(x=week))+
   ggtitle("Summer Protist Carbon Concentrations at MVCO")+
   xlab("Week of Year")
 
-ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\func_group\\summer-protist-tricho-yearly.png",
+ggsave(filename=paste0(save_fig_path,"func_group\\summer-protist-tricho-yearly.png"),
        width = 2000,height=500,units="px",dpi =175)
 
 
@@ -126,9 +126,17 @@ ggplot(data=dfcarbon_group[dfcarbon_group$season=="Summer",], aes(x=week))+
 ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\func_group\\summer-nanoflagcocco-yearly.png",
        width = 2000,height=500,units="px",dpi =175)
 
-##############################################################################
-############## FALL - BIO
+ggplot(data=dfcarbon_group[dfcarbon_group$season=="Summer",], aes(x=week))+
+  geom_boxplot(aes(y=Diatom_noDetritus/(Dinoflagellate+Ciliate+NanoFlagCocco)))+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Carbon Concentration Ratio")+
+  ggtitle("Diatom:(Other Groups) Ratio at MVCO")+
+  xlab("Week of Year")
 
+
+################################################################################
+## FALL - BIO
+################################################################################
 ggplot(data=dfcarbon_group[dfcarbon_group$season=="Fall",], aes(x=week))+
   geom_boxplot(aes(y=protist_tricho))+  facet_grid(cols=vars(year))+
   scale_x_discrete(breaks=seq(36,48,5))+
@@ -192,9 +200,10 @@ ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\func_group\\f
        width = 2000,height=500,units="px",dpi =175)
 
 
-######################################################################
-########## SPRING
 
+################################################################################
+## SPRING
+################################################################################
 
 ggplot(data=df_sal[df_sal$season=="Spring",], aes(x=week))+
   geom_boxplot(aes(y=salt))+  facet_grid(cols=vars(year))+
@@ -227,9 +236,10 @@ ggplot(data=dfcarbon_group[dfcarbon_group$season=="Spring",], aes(x=week))+
   ggtitle("Spring Dinoflagellate Carbon Concentration at MVCO")+
   xlab("Week of Year")
 
-##############################################################
-########### SUMMER AND FALL
 
+################################################################################
+########### SUMMER AND FALL
+################################################################################
 ggplot(data=dfcarbon_group[(dfcarbon_group$season=="Summer")|(dfcarbon_group$season=="Fall"),], aes(x=week))+
   geom_boxplot(aes(y=protist_tricho))+  facet_grid(cols=vars(year))+
   scale_x_discrete(breaks=seq(23,48,10))+

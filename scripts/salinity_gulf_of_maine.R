@@ -111,6 +111,8 @@ pbay = load_data(pen_bay,depth = 1)
 
 norchan=load_data(nor_chan,depth = 9.96921e+36)
 
+gom_nit = load_data(nitrate_gom)
+
 ggplot(data = norchan$dfsal[norchan$dfsal$season == "Summer",])+
   geom_boxplot(aes(x=week,y=salinity_daily_mean))+
   facet_grid(cols=vars(year))+

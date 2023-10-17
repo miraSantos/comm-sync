@@ -1,8 +1,9 @@
 
 # READING IN SALT,ADCP DATA
-date <- "C:\\Users\\Miraflor P Santos\\comm-sync\\data\\mvco\\mvco_steven_salt\\date_mv.csv"
-salt <- "C:\\Users\\Miraflor P Santos\\comm-sync\\data\\mvco\\mvco_steven_salt\\salt_mv.csv"
-adcp <- "C:\\Users\\Miraflor P Santos\\comm-sync\\data\\mvco\\mvco_steven_salt\\wtadcp_mv.csv"
+datapath = "/home/mira/MIT-WHOI/github_repos/comm-sync/data"
+date <- paste0(datapath,"/mvco/mvco_steven_salt/date_mv.csv")
+salt <- paste0(datapath,"/mvco/mvco_steven_salt/salt_mv.csv")
+adcp <- paste0(datapath,"/mvco/mvco_steven_salt/wtadcp_mv.csv")
 
 date_salt = read.csv(date,header=F)
 sal_salt = read.csv(salt,header=F)
@@ -73,3 +74,22 @@ ggplot(data=df_sal,aes(x = week,y = salt))+
   theme(text = element_text(size = 15))+
   ggtitle("Corrected Salinity Measurements at MVCO")
 
+ggplot(data=df_sal) + geom_point(aes(x=date,y=salt),size=1)+
+  xlab("Time")+ylab("Salinity (PSU)")+
+  scale_x_date(date_breaks = "2 years",date_labels = "%Y")
+
+figuresavepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/figures/"
+ggsave(paste0(figuresavepath,"/environmental/salinity/salinity_mvco.png"),
+       width=1000,height=500,units="px",dpi=175)
+
+
+ggplot(data=dfcarbon_group) + geom_point(aes(x=date,y=Beam_temperature_corrected),size=1)+
+  xlab("Time")+ylab("Temperature (Deg C)")+
+  scale_x_date(date_breaks = "2 years",date_labels = "%Y")
+
+figuresavepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/figures/"
+ggsave(paste0(figuresavepath,"/environmental/temp/temperature_mvco.png"),
+       width=1000,height=500,units="px",dpi=175)
+
+
+  
