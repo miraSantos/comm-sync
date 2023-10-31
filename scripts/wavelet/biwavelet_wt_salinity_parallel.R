@@ -1,4 +1,4 @@
-basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
+basepath = "/vortexfs1/scratch/msantos/comm_sync/"
 load(paste0(basepath,"data/r_objects/unfilled/2023_Jul_26_dfcarbon_group.RData"))
 list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
                       "fields","ggplot2","tibbletime","dplyr","sets",
@@ -6,9 +6,8 @@ list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
-source(paste0(basepath,"/scripts/wavelet/adv_biwavelet_packages.R"))
+source(paste0(basepath,"/scripts/adv_biwavelet_packages.R"))
 rm(wt)
-
 
 plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALSE){
   x = res
@@ -158,7 +157,7 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
              yaxt = "n",
              xaxt = "n",
              col = fill.colors)
-             # main=title)
+  # main=title)
   
   xlocs <- seq(1,length(x$t),365)
   axis(side=1,at=xlocs,labels=format(df$date[xlocs],form))
@@ -166,7 +165,20 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
   yticklab <- format(2 ^ axis.locs,dig=1)
   yticklab <- c("4","16","64","1yr","2yr","4yr")
   axis(2, at = axis.locs, labels = yticklab,las=1)
-  mtext("Power",side=4,srt=90,line=5)
+  
+  
+  # COI
+  if (plot.coi) {
+    # polygon(x = c(x$t, rev(x$t)), lty = lty.coi, lwd = lwd.coi,
+    #         y = c(log2(x$coi),
+    #               rep(max(log2(x$coi), na.rm = TRUE), length(x$coi))),
+    #         col = adjustcolor(col.coi, alpha.f = alpha.coi), border = col.coi)
+    polygon(x = c(x$t, rev(x$t)), lty = lty.coi, lwd = lwd.coi,
+            y = c(log2(x$coi), rep(max(c(log2(x$coi), x$period), na.rm = TRUE),
+                                   length(x$coi))),
+            col = adjustcolor(col.coi, alpha.f = alpha.coi), border = col.coi)
+  }
+  
   # sig.level contour
   if (plot.sig & length(x$signif) > 1) {
     if (x$type %in% c("wt", "xwt")) {
@@ -178,19 +190,6 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
       contour(x$t, yvals, t(tmp), level = tol, col = col.sig, lwd = lwd.sig,
               add = TRUE, drawlabels = FALSE)
     }
-  }
-  
-  # COI
-  
-  if (plot.coi) {
-    # polygon(x = c(x$t, rev(x$t)), lty = lty.coi, lwd = lwd.coi,
-    #         y = c(log2(x$coi),
-    #               rep(max(log2(x$coi), na.rm = TRUE), length(x$coi))),
-    #         col = adjustcolor(col.coi, alpha.f = alpha.coi), border = col.coi)
-    polygon(x = c(x$t, rev(x$t)), lty = lty.coi, lwd = lwd.coi,
-            y = c(log2(x$coi), rep(max(c(log2(x$coi), x$period), na.rm = TRUE),
-                                   length(x$coi))),
-            col = adjustcolor(col.coi, alpha.f = alpha.coi), border = col.coi)
   }
   
   # Plot phases
@@ -236,4 +235,32 @@ fill_gaps <- function(df,index_list){
   return(df_freq)
 }
 
+#SALINITY
 
+load(paste0(basepath,"/data/r_objects/unfilled/salinity_2023_Oct_23.RData"))
+
+ggplot(df_sal) + geom_point(aes(x=date,y= salt))+
+  scale_x_date(date_breaks = "2 years",date_labels = "%Y")
+
+df_sal_filled = fill_gaps(df_sal,"salt")
+df_sal_filled <- df_sal_filled %>% select(-c("adcp","regime")) %>% drop_na()
+
+ggplot(df_sal_filled) + geom_point(aes(x=date,y= salt))+
+  scale_x_date(date_breaks = "2 years",date_labels = "%Y")
+
+
+time_index = seq(1,nrow(df_sal_filled),1)
+dat = as.matrix(cbind(time_index,df_sal_filled$salt))
+
+res = wt_arc(dat,
+             s0=16,
+             max.scale = 365*4,
+             asig.level = c(0.95),
+             psig.level=c(0.95),
+             anrands=1000)
+
+plot_single_wt_arc(df_sal_filled,
+                   res,
+                   title="",
+                   save_folder=paste0(basepath,"/results/"),
+                   save_name="salinity_wt_corrected.png")

@@ -40,6 +40,7 @@ create_groups <- function(func_group){
   return(index)
 }
 
+
 diatom_index <- create_groups("Diatom")
 dino_index <- create_groups("Dinoflagellate") #TO DO: exclude dinophycaeae
 cocco_index <- create_groups("Coccolithophore")

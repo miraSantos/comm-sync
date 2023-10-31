@@ -4,9 +4,11 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-date <- read.csv("C:\\Users\\Miraflor P Santos\\comm-sync\\data\\mvco\\wind_stress_date.csv",header = F)
-stress_imag<- read.csv("C:\\Users\\Miraflor P Santos\\comm-sync\\data\\mvco\\wind_stress_im.csv",header = F)
-stress_real <- read.csv("C:\\Users\\Miraflor P Santos\\comm-sync\\data\\mvco\\wind_stress_real.csv",header=F)
+basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
+
+date <- read.csv(paste0(basepath,"/data/mvco/wind_stress_date.csv"),header = F)
+stress_imag<- read.csv(paste0(basepath,"data/mvco/wind_stress_im.csv"),header=F)
+stress_real <- read.csv(paste0(basepath,"/data/mvco/wind_stress_real.csv"),header=F)
 
 #converting to data frame and changing dataframe headers
 df_wind = data.frame(date = date$V1,stress_imag=stress_imag, stress_real= stress_real)
@@ -250,6 +252,7 @@ ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui,color=year),size=2)+
 
 
 ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui),size=2)+
+  geom_hline(yintercept=0,color="red")+
   facet_grid(cols=vars(year))+
   # scale_x_discrete(breaks=seq(152,243,20))+
   xlab("Day of Year")+
@@ -257,7 +260,7 @@ ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui),size=2)+
   ggtitle("Summer CUI (Eastward and Westward)")
 
 
-ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\wind\\summer-yearly-east-west-upwelling.png",
+ggsave(filename=paste0(basepath,"figures/environmental/wind/summer-yearly-east-west-upwelling.png"),
        width = 2300,height=500,units="px",dpi =175)
 
 
@@ -302,6 +305,7 @@ ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui,color=year),size=2)+
 
 
 ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui),size=2)+
+  geom_hline(yintercept=0,color="red")+
   facet_grid(cols=vars(year))+
   # scale_x_discrete(breaks=seq(152,243,20))+
   xlab("Day of Year")+
@@ -309,7 +313,7 @@ ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui),size=2)+
   ggtitle("Summer CUI (Northward and Southward)")
 
 
-ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\wind\\summer-yearly-north-south-upwelling.png",
+ggsave(filename=paste0(basepath,"figures/environmental/wind/summer-yearly-north-south-upwelling.png"),
        width = 2300,height=500,units="px",dpi =175)
 
   

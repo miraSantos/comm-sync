@@ -1,16 +1,12 @@
-basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
-load(paste0(basepath,"data/r_objects/unfilled/2023_Jul_26_dfcarbon_group.RData"))
+args = commandArgs(trailingOnly=TRUE)
 list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
                       "fields","ggplot2","tibbletime","dplyr","sets",
-                      "reshape2","ggformula","tidyr","moments","ggbump")
+                      "reshape2","tidyr","moments")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
-source(paste0(basepath,"/scripts/wavelet/adv_biwavelet_packages.R"))
-rm(wt)
 
-
-plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALSE){
+plot_wtc_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALSE){
   x = res
   ncol = 64
   fill.cols = NULL
@@ -31,13 +27,13 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
   bw = FALSE
   legend.loc = c(0.8,0.8,1,1)
   legend.horiz = FALSE
-  arrow.len = min(par()$pin[2] / 30,par()$pin[1] / 40)
-  arrow.lwd = arrow.len * 0.3
+  arrow.len = 0.1
+  arrow.lwd = 0.05
   arrow.cutoff = 0.8
   arrow.col = "black"
   xlim = NULL
   ylim = NULL
-  zlim = NULL
+  zlim = c(0,1)
   xaxt = "s"
   yaxt = "s"
   form = "%Y"
@@ -157,8 +153,8 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
              ylab = ylab,
              yaxt = "n",
              xaxt = "n",
-             col = fill.colors)
-             # main=title)
+             col = fill.colors,
+             main=title)
   
   xlocs <- seq(1,length(x$t),365)
   axis(side=1,at=xlocs,labels=format(df$date[xlocs],form))
@@ -166,7 +162,9 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
   yticklab <- format(2 ^ axis.locs,dig=1)
   yticklab <- c("4","16","64","1yr","2yr","4yr")
   axis(2, at = axis.locs, labels = yticklab,las=1)
-  mtext("Power",side=4,srt=90,line=5)
+  
+  
+
   # sig.level contour
   if (plot.sig & length(x$signif) > 1) {
     if (x$type %in% c("wt", "xwt")) {
@@ -179,9 +177,7 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
               add = TRUE, drawlabels = FALSE)
     }
   }
-  
   # COI
-  
   if (plot.coi) {
     # polygon(x = c(x$t, rev(x$t)), lty = lty.coi, lwd = lwd.coi,
     #         y = c(log2(x$coi),
@@ -222,18 +218,3 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
   }
   dev.off()
 }
-#fill gaps
-fill_gaps <- function(df,index_list){
-  df_freq <- df %>% 
-    #set to daily frequency
-    complete(date = seq.Date(min(df$date),max(df$date), by="day")) %>%
-    #fill out doy_numeric
-    mutate(doy_numeric = yday(date)) %>%
-    group_by(doy_numeric)%>%
-    #replace nans for living things with yearly mean
-    mutate(across(all_of(index_list),~replace_na(.,mean(.,na.rm=T))))%>%
-    data.frame()
-  return(df_freq)
-}
-
-

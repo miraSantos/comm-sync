@@ -42,3 +42,24 @@ ggplot(data = dfcarbon_group) + geom_line(aes(x=date,y=Ciliate))+
 
 ggsave(paste0(basepath,"figures/time_series/ciliate_timeseries.png"),
        width=1000,height=500,units="px",dpi=150)
+
+
+
+ggplot(data = dfcarbon_group) + geom_line(aes(x=date,y=Dinoflagellate))+
+  xlab("Time")+ylab("Dinoflagellate carbon concentration (ug/mL)")+
+  scale_x_date(date_breaks = "2 years",date_labels = "%Y")+
+  scale_y_continuous(label = comma)+
+  ylim(0,50000)
+
+
+df_env <- read.csv("/home/mira/MIT-WHOI/github_repos/comm-sync/data/mvco/mvco_env.csv")
+df_env$date <- as.Date(df_env$days,format ="%d-%b-%Y")
+df_env$year <- year(df_env$date)
+
+df_env %>% filter(year>=2006) %>% ggplot() + geom_line(aes(x=date,y=Beam_temperature_corrected),size=1.2)+
+  xlab("Time")+ylab("Temperature (Deg C)")+
+  scale_x_date(date_breaks = "2 years",date_labels = "%Y")
+
+
+ggsave(paste0(basepath,"figures/time_series/temperature.png"),
+       width=1000,height=500,units="px",dpi=150)

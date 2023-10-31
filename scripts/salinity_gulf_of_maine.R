@@ -1,10 +1,10 @@
 
-list.of.packages <- c("lubridate","dplyr","ggplot2","ggformula")
+list.of.packages <- c("lubridate","dplyr","ggplot2","tidyverse")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-#penobscot bay
+# penobscot bay
 pen_bay <- "http://www.neracoos.org/erddap/tabledap/F01_sbe37_all.csv?station%2Ctime%2Cmooring_site_desc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2023-07-24T21%3A30%3A00Z"
 
 #jordan basin station M01 (2006 - 2022)
@@ -31,6 +31,9 @@ gom_sal <- "http://www.neracoos.org/erddap/tabledap/E01_sbe37_all.csv?station%2C
 ma_bay2 <- "http://www.neracoos.org/erddap/tabledap/A01_sbe16_trans_all.csv?station%2Ctime%2Cmooring_site_desc%2Cwater_depth%2Ctransmissivity_voltage%2Ctransmissivity_voltage_qc%2Ctransmissivity%2Ctransmissivity_qc%2Cattenuation%2Cattenuation_qc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Ctime_created%2Ctime_modified%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2021-01-30T14%3A00%3A00Z"
 # station e01 2015 - 2018
 nitrate_gom <- "http://www.neracoos.org/erddap/tabledap/E01_corrected_nitrate_csv.csv?station%2Ctime%2CYear%2CMonth%2CDay%2CHour%2CMinute%2CSecond%2CNitrate_umol%2CStandard_Deviation%2CNitrate%2Clatitude%2Clongitude%2Cmooring_site_desc%2Cdepth%2Cwater_depth&time%3E=2006-11-19T00%3A00%3A00Z&time%3C=2022-11-26T12%3A45%3A00Z"
+
+dfsal <- read.csv(url(jor_bas))
+
 
 
 #remove first row bc it describes data units
@@ -159,6 +162,17 @@ ggplot(data = wmg$dfsal[wmg$dfsal$season == "Summer",])+
   ggtitle(paste0("Summer Salinity at "," Western Maine Gulf ",as.character(wmg$station)))
 
 ggsave(filename=paste0(basepath,"figures/environmental/salinity/summer-salinity-WMG.png"),
+       width = 2000,height=500,units="px",dpi =175)
+
+
+ggplot(data = norchan$dfsal[norchan$dfsal$season == "Summer",])+
+  geom_boxplot(aes(x=week,y=salinity_daily_mean))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Salinity (psu)")+
+  xlab("Week of Year")
+
+ggsave(filename=paste0(basepath,"figures/environmental/salinity/summer-salinity-norchan.png"),
        width = 2000,height=500,units="px",dpi =175)
 
 
@@ -349,3 +363,72 @@ dfsal$week <- week(dfsal$date)
 
 dfsal$salinity = as.numeric(dfsal$salinity)
 dfsal$depth = as.numeric(dfsal$depth)
+
+
+##### BIWAVELET COHERENCE
+str(df_sal_comb)
+
+mbay_coher = data.frame(date = mbay$dfsal$date,mbay_salt = mbay$dfsal$salinity_daily_mean)
+wmg_coher = data.frame(date = wmg$dfsal$date,wmg_salt = wmg$dfsal$salinity_daily_mean)
+norchan_coher = data.frame(date = norchan$dfsal$date,norchan_salt = norchan$dfsal$salinity_daily_mean)
+jorbas_coher = data.frame(date = jorb$dfsal$date,jorbas_salt = jorb$dfsal$salinity_daily_mean)
+
+#put all data frames into list
+df_list <- list(jorbas_coher,norchan_coher,wmg_coher,mbay_coher,df_sal_filled)
+
+#merge all data frames in list
+df_sal_merged <-df_list %>% reduce(full_join, by='date')
+
+
+
+time_index = seq(1,nrow(df_sal_merged),1)
+dat1 = as.matrix(cbind(time_index,scale(df_sal_merged$mean_salt)))
+dat2 = as.matrix(cbind(time_index,scale(df_sal_merged$mbay_salt)))
+
+res = wtc_arc(d1=dat1,d2=dat2,
+              s0=16,
+              max.scale = 365*4,
+              asig.level = c(0.95),
+              psig.level=c(0.95),
+              anrands=1000) 
+
+plot_wtc_arc(dfcarbon_group_merged,res,title="",
+             save_folder=paste0(basepath,"/figures/biwavelet_coherence/"),
+             save_name = paste0("coherence_salt_phase_","mbay-mvco",".png"),
+             plot.phase=TRUE)
+
+
+########
+
+time_index = seq(1,nrow(df_sal_merged),1)
+dat1 = as.matrix(cbind(time_index,scale(df_sal_merged$mean_salt)))
+dat2 = as.matrix(cbind(time_index,scale(df_sal_merged$wmg_salt)))
+
+res = wtc_arc(d1=dat1,d2=dat2,
+              s0=16,
+              max.scale = 365*4,
+              asig.level = c(0.95),
+              psig.level=c(0.95),
+              anrands=1000) 
+
+plot_wtc_arc(dfcarbon_group_merged,res,title="",
+             save_folder=paste0(basepath,"/figures/biwavelet_coherence/"),
+             save_name = paste0("coherence_salt_phase_","wmg-mvco",".png"),
+             plot.phase=TRUE)
+
+
+time_index = seq(1,nrow(df_sal_merged),1)
+dat1 = as.matrix(cbind(time_index,scale(df_sal_merged$mean_salt)))
+dat2 = as.matrix(cbind(time_index,scale(df_sal_merged$norchan_salt)))
+
+res = wtc_arc(d1=dat1,d2=dat2,
+              s0=16,
+              max.scale = 365*4,
+              asig.level = c(0.95),
+              psig.level=c(0.95),
+              anrands=1000) 
+
+plot_wtc_arc(dfcarbon_group_merged,res,title="",
+             save_folder=paste0(basepath,"/figures/biwavelet_coherence/"),
+             save_name = paste0("coherence_salt_phase_","norchan-mvco",".png"),
+             plot.phase=TRUE)

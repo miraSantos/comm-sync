@@ -48,8 +48,10 @@ extract_chl_pp <- function(Variable){
 }
 
 df_chl = extract_chl_pp(Variable = "WEEKLY_CHLOR_A_MEDIAN")
+write.csv(df_chl,file="/home/mira/MIT-WHOI/Week.2023.10.15-21/data_to_share/weekly_chl_ecomon.csv")
 
 df_pp = extract_chl_pp(Variable = "WEEKLY_PPD_MEDIAN")
+write.csv(df_pp,file="/home/mira/MIT-WHOI/Week.2023.10.15-21/data_to_share/weekly_ppd_ecomon.csv")
 
 plot_season_year <- function(dataset,season_opt,epu,basepath,ymin=0,ymax){
   variable = dataset$Var[1]

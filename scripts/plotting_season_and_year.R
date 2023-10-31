@@ -1,5 +1,6 @@
+basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 
-save_r_path = "/home/mira/MIT-WHOI/github_repos/comm-sync/data/ifcb/r_objects/unfilled/"
+save_r_path = paste0(basepath,"/data/ifcb/r_objects/unfilled/")
 load(paste0(save_r_path,"2023_Jul_28_dfcarbon_group.RData"))
 load(paste0(save_r_path,"2023_Jul_28_dfcount_index.RData"))
 
@@ -30,7 +31,7 @@ ggplot(data=dfcarbon_group[dfcarbon_group$season=="Summer",], aes(x=week))+
   ggtitle("Summer Wind Direction at MVCO")+
   xlab("Week of Year")
 
-ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\wind\\summer-wind-dir-MVCO.png",
+ggsave(filename=paste0(basepath,"figures/environmental/wind/summer-wind-dir-MVCO.png"),
        width = 2000,height=500,units="px",dpi =175)
 
 ggplot(data=dfcarbon_group[dfcarbon_group$season=="Summer",], aes(x=week))+

@@ -1,4 +1,4 @@
-`load("/dos/MIT-WHOI/community_sychrony/scripts/comm_sync.RData")
+load("/dos/MIT-WHOI/community_sychrony/scripts/comm_sync.RData")
 list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
                       "fields","ggplot2","tibbletime","dplyr","sets",
                       "reshape2","ggformula","tidyr","moments")

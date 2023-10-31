@@ -1,10 +1,10 @@
-save_r_path = "C:\\Users\\Miraflor P Santos\\comm-sync\\data\\ifcb\\r_objects\\unfilled\\"
-load(paste0(save_r_path,"2023_Jul_28_dfcarbon_group.RData"))
-load(paste0(save_r_path,"2023_Jul_28_dfcount_index.RData"))
+base_path = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
+load(paste0(basepath,"/data/ifcb/r_objects/filled/2023_Jul_28_dfcarbon_group.RData"))
+load(paste0(basepath,"/data/ifcb/r_objects/filled/2023_Jul_28_dfcount_index.RData"))
 
 list.of.packages <- c("RColorBrewer", "lubridate","ggplot2",
                       "tibbletime","dplyr","sets",
-                      "reshape2","ggformula","tidyr","ggbump","purrr")
+                      "reshape2","tidyr","ggbump","purrr","scales")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
@@ -25,12 +25,17 @@ dfcarbon_weekly <- dfcarbon_group %>%
 ggplot(data=dfcarbon_group, aes(x=date))+
   geom_point(aes(y=AvgWindSpeed))+
   scale_x_date(date_breaks="1 year", date_labels="%Y")+
-  ylab("Wind Speed (knots")
+  ylab("Wind Speed (knots)")
 
 
 ################################################################################
 # DIVIDE DATA INTO REGIMES
 #creating indices to indicate regimes
+dfcarbon_group$year <- year(dfcarbon_group$date)
+dfcarbon_group$month <- month(dfcarbon_group$date)
+dfcarbon_group$week <- week(dfcarbon_group$date)
+
+
 dfcarbon_group$regime = NaN
 
 regime_1_end = 2012
@@ -49,38 +54,49 @@ dfcarbon_group$regime[regime_3_index] = paste0(as.character(regime_2_end)," - 20
 
 #################### PLOTTING REGIMES, FUNCTIONAL GROUPS at WEEKLY LEVEL
 
-ggplot(data=dfcarbon_group,aes(x = month,y = protist_tricho))+
-  geom_boxplot(color="darkgreen",outlier.color="black")+ 
-  facet_grid(cols=vars(year))+
+ggplot(data=dfcarbon_group,aes(x = as.factor(week),y = protist_tricho))+
+  geom_boxplot(color="black",outlier.color="black")+ 
+  facet_grid(cols=vars(regime))+
   scale_x_discrete(breaks=seq(1,52,5))+
+  scale_y_continuous(label=comma,limits =c(0,2.5e5))+
   xlab("Week of Year")+
-  ylab("Protist Carbon Concentration")+ylim(0,2.5e5)+
-  theme(text = element_text(size = 15))
+  ylab("Protist carbon concentration (ug/ml)")
 
-ggplot(data=dfcarbon_group,aes(x = week,y = Diatom_noDetritus)) + 
-  geom_boxplot(color="darkgreen",outlier.color="black")+ 
+ggsave(paste0(basepath,"figures/time_series/regime/protist-regime.png"),
+       width=1000,height=500,units="px",dpi=150)
+
+ggplot(data=dfcarbon_group,aes(x = as.factor(week),y = Diatom_noDetritus)) + 
+  geom_boxplot(color="black",outlier.color="black")+ 
   facet_grid(cols=vars(regime))+
   xlab("Week of Year")+
   scale_x_discrete(breaks=seq(1,52,5))+
-  ylab(paste0(group_list[1]," Carbon Concentration (ug/mL)"))+ylim(0,1.25e5)+
-  theme(text = element_text(size = 15))
+  ylab(paste0("Diatom"," carbon concentration (ug/mL)"))+
+  scale_y_continuous(label=comma,limits =c(0,1.25e5))
 
+ggsave(paste0(basepath,"figures/time_series/regime/diatom-regime.png"),
+       width=1000,height=500,units="px",dpi=150)
 
-ggplot(data=dfcarbon_group,aes(x = week,y = Ciliate))+
-  geom_boxplot(color="darkgreen",outlier.color="black")+ 
+ggplot(data=dfcarbon_group,aes(x = as.factor(week),y = Ciliate))+
+  geom_boxplot(color="black",outlier.color="black")+ 
   facet_grid(cols=vars(regime))+
   scale_x_discrete(breaks=seq(1,52,5))+
   xlab("Week of Year")+
-  ylab("Ciliate Carbon Concentration")+
-  theme(text = element_text(size = 15))
+  ylab("Ciliate carbon concentration (ug/mL)")+
+  scale_y_continuous(label=comma)
 
-ggplot(data=dfcarbon_group,aes(x = week,y = (Dinoflagellate))) +
-  geom_boxplot(color="darkgreen",outlier.color="black")+ 
+ggsave(paste0(basepath,"figures/time_series/regime/ciliate-regime.png"),
+       width=1000,height=500,units="px",dpi=150)
+
+ggplot(data=dfcarbon_group,aes(x = as.factor(week),y = (Dinoflagellate))) +
+  geom_boxplot(color="black",outlier.color="black")+ 
   facet_grid(cols=vars(regime))+
   scale_x_discrete(breaks=seq(1,52,5))+
   xlab("Week of Year")+
-  ylab("Dinoflagellate Carbon Concentration")+ylim(0,5e4)+
-  theme(text = element_text(size = 15))
+  ylab("Dinoflagellate carbon concentration (ug/mL)")+
+  scale_y_continuous(label=comma,limits =c(0,5e4))
+
+ggsave(paste0(basepath,"figures/time_series/regime/dino-regime.png"),
+       width=1000,height=500,units="px",dpi=150)
 
 ggplot(data=dfcarbon_group,aes(x = week,y = NanoFlagCocco))+
   geom_boxplot(color="darkgreen",outlier.color="black")+ 
