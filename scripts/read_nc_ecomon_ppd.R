@@ -53,8 +53,8 @@ write.csv(df_ppd,file=paste0(basepath,"/data/npp_summarized_ecomon_weekly.csv"))
 
 ggplot(data=df_ppd) + geom_point(aes(x=date,y=ppd_sum))+
   scale_x_date(date_breaks="2 year",date_labels="%Y")+
-  ylab("Net Primary Production (gCarbon/m^2/Week")+xlab("Time (years)")
-ggsave(filename=paste0(basepath,"/figures/environmental/PPD/mvco_region_ppd_mean.png"),width=1000,height=500,units="px",dpi=100)
+  ylab("Net Primary Production (gCarbon/m^2/Week)")+xlab("Time (years)")
+ggsave(filename=paste0(basepath,"/figures/environmental/PPD/mvco_region_ppd_mean.png"),width=1000,height=500,units="px",dpi=120)
 
 ggplot(data=df_ppd) + geom_point(aes(x=week,y=ppd_sum))
 
