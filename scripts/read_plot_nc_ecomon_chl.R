@@ -51,16 +51,35 @@ for(chl_index in 10:length(chl_list)){print(chl_index)
   nc_close(chl)
 }
 
+
 df_chl$date <- as.Date(make_datetime(year = as.numeric(df_chl$year)) + weeks(df_chl$week))
 
 write.csv(df_chl,file=paste0(basepath,"/data/chl_summarized_ecomon_weekly.csv"))
+
+regime_1_end = 2012
+regime_2_end = 2018
+regime_1_index = (which(df_chl$year < regime_1_end))
+regime_2_index = (which((df_chl$year >= regime_1_end)&(df_chl$year < regime_2_end)))
+regime_3_index = (which(df_chl$year >= regime_2_end))
+
+df_chl$regime <- NaN
+
+df_chl$regime[regime_1_index] = paste0("2006 - ",as.character(regime_1_end-1))
+df_chl$regime[regime_2_index] = paste0(as.character(regime_1_end)," - ",as.character(regime_2_end-1))
+df_chl$regime[regime_3_index] = paste0(as.character(regime_2_end)," - 2022")
+
 
 ggplot(data=df_chl) + geom_point(aes(x=date,y=chl_sum))+
   scale_x_date(date_breaks="2 year",date_labels="%Y")+
   ylab("Chl-a mean (mg m^-3)")+xlab("Time (years)")
 ggsave(filename=paste0(basepath,"/figures/environmental/chl/mvco_region_chl_mean.png"),width=1000,height=500,units="px",dpi=120)
 
-ggplot(data=df_chl) + geom_point(aes(x=week,y=chl_sum))
+ggplot(data=df_chl) + geom_boxplot(aes(x=as.factor(week),y=chl_sum))+
+  facet_grid(cols=vars(regime))+
+  scale_x_discrete(breaks=seq(1,52,5))+
+  xlab("Week")+ylab("Chl-a (mg m^-3)")
+ggsave(filename=paste0(basepath,"/figures/environmental/chl/mvco_region_chl_mean_regime.png"),
+       width=1000,height=500,units="px",dpi=120)
 
 chl.slice <- chl.array[,,32]
 r <- raster(t(chl.slice), xmn=min(lon), xmx=max(lon), ymn=min(lat), ymx=max(lat), crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))

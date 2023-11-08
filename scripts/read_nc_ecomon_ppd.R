@@ -56,7 +56,30 @@ ggplot(data=df_ppd) + geom_point(aes(x=date,y=ppd_sum))+
   ylab("Net Primary Production (gCarbon/m^2/Week)")+xlab("Time (years)")
 ggsave(filename=paste0(basepath,"/figures/environmental/PPD/mvco_region_ppd_mean.png"),width=1000,height=500,units="px",dpi=120)
 
+
 ggplot(data=df_ppd) + geom_point(aes(x=week,y=ppd_sum))
+
+regime_1_end = 2012
+regime_2_end = 2018
+regime_1_index = (which(df_ppd$year < regime_1_end))
+regime_2_index = (which((df_ppd$year >= regime_1_end)&(df_ppd$year < regime_2_end)))
+regime_3_index = (which(df_ppd$year >= regime_2_end))
+
+df_ppd$regime <- NaN
+
+df_ppd$regime[regime_1_index] = paste0("2006 - ",as.character(regime_1_end-1))
+df_ppd$regime[regime_2_index] = paste0(as.character(regime_1_end)," - ",as.character(regime_2_end-1))
+df_ppd$regime[regime_3_index] = paste0(as.character(regime_2_end)," - 2022")
+
+
+
+ggplot(data=df_ppd) + geom_boxplot(aes(x=as.factor(week),y=ppd_sum))+
+  facet_grid(cols=vars(regime))+
+  scale_x_discrete(breaks=seq(1,52,5))+
+  ylab("Net Primary Production (gCarbon/m^2/Week)")+xlab("Time (week)")
+ggsave(filename=paste0(basepath,"/figures/environmental/PPD/mvco_region_ppd_mean_regime.png"),
+       width=1000,height=500,units="px",dpi=120)
+
 
 ppd.slice <- ppd.array[,,32]
 r <- raster(t(ppd.slice), xmn=min(lon), xmx=max(lon), ymn=min(lat), ymx=max(lat), crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
