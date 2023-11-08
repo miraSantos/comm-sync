@@ -29,10 +29,16 @@ gom <-"http://www.neracoos.org/erddap/tabledap/E07_met_all.csv?station%2Cmooring
 gom_sal <- "http://www.neracoos.org/erddap/tabledap/E01_sbe37_all.csv?station%2Ctime%2Cmooring_site_desc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2023-07-24T20%3A00%3A00Z"
 # MA Bay station A01 (2014-2017)
 ma_bay2 <- "http://www.neracoos.org/erddap/tabledap/A01_sbe16_trans_all.csv?station%2Ctime%2Cmooring_site_desc%2Cwater_depth%2Ctransmissivity_voltage%2Ctransmissivity_voltage_qc%2Ctransmissivity%2Ctransmissivity_qc%2Cattenuation%2Cattenuation_qc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Ctime_created%2Ctime_modified%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2021-01-30T14%3A00%3A00Z"
+
 # station e01 2015 - 2018
 nitrate_gom <- "http://www.neracoos.org/erddap/tabledap/E01_corrected_nitrate_csv.csv?station%2Ctime%2CYear%2CMonth%2CDay%2CHour%2CMinute%2CSecond%2CNitrate_umol%2CStandard_Deviation%2CNitrate%2Clatitude%2Clongitude%2Cmooring_site_desc%2Cdepth%2Cwater_depth&time%3E=2006-11-19T00%3A00%3A00Z&time%3C=2022-11-26T12%3A45%3A00Z"
 
 
+df_nit<- read.csv(url(nitrate_gom))
+write.csv(df_nit,"/home/mira/MIT-WHOI/Week.2023.10.15-21/data_to_share/nutrients/central_maine_shelf_nitrate.csv")
+basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
+dfsal_headers <- read.csv(url(pen_bay))[1,]
+write.csv(dfsal_headers,file=paste0(basepath,"/data/neracoos_salinity_headers.csv"))
 dfsal <- read.csv(url(pen_bay))[-1,] 
 dfsal_units <- read.csv(url(pen_bay))[1,]
 dfsal <-dfsal%>% filter(salinity_qc == 0,temperature_qc==0,conductivity_qc==0)

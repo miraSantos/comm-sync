@@ -1,5 +1,5 @@
 
-list.of.packages <- c("lubridate","dplyr","ggplot2","tidyverse")
+list.of.packages <- c("lubridate","dplyr","ggplot2","tidyverse","purrr")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
@@ -11,13 +11,12 @@ pen_bay <- "http://www.neracoos.org/erddap/tabledap/F01_sbe37_all.csv?station%2C
 jor_bas <- "http://www.neracoos.org/erddap/tabledap/M01_sbe37_all.csv?station%2Ctime%2Cmooring_site_desc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-07-17T00%3A00%3A00Z&time%3C=2023-07-24T17%3A00%3A00Z"
 
 #western maine shelf station B01 (2006- 2022)
-bo1_buoy <- "http://www.neracoos.org/erddap/tabledap/B01_sbe37_all.csv?station%2Ctime%2Cmooring_site_desc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2023-07-24T20%3A00%3A00Z"
+wmg_buoy <- "http://www.neracoos.org/erddap/tabledap/B01_sbe37_all.csv?station%2Ctime%2Cmooring_site_desc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2023-07-24T20%3A00%3A00Z"
 
 #MA bay station A01 (2006-2022)
 ma_bay <- "http://www.neracoos.org/erddap/tabledap/A01_sbe37_all.csv?station%2Ctime%2Cmooring_site_desc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2023-07-24T20%3A30%3A00Z"
 
 ma_bay_chl <- "http://www.neracoos.org/erddap/tabledap/A01_optics_s_all.csv?station%2Cmooring_site_desc%2Ctime%2Cchlorophyll%2Cchlorophyll_qc%2Cturbidity%2Cturbidity_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2003-01-01T00%3A00%3A00Z&time%3C=2023-09-08T17%3A00%3A00Z"
-
 #Northeast channel N01 
 nor_chan <- "http://www.neracoos.org/erddap/tabledap/N01_sbe37_all.csv?station%2Ctime%2Cmooring_site_desc%2Cconductivity%2Cconductivity_qc%2Ctemperature%2Ctemperature_qc%2Csalinity%2Csalinity_qc%2Csigma_t%2Csigma_t_qc%2Clongitude%2Clatitude%2Cdepth&time%3E=2006-01-01T00%3A00%3A00Z&time%3C=2021-11-04T21%3A00%3A00Z"
 #WMG 
@@ -33,8 +32,6 @@ ma_bay2 <- "http://www.neracoos.org/erddap/tabledap/A01_sbe16_trans_all.csv?stat
 nitrate_gom <- "http://www.neracoos.org/erddap/tabledap/E01_corrected_nitrate_csv.csv?station%2Ctime%2CYear%2CMonth%2CDay%2CHour%2CMinute%2CSecond%2CNitrate_umol%2CStandard_Deviation%2CNitrate%2Clatitude%2Clongitude%2Cmooring_site_desc%2Cdepth%2Cwater_depth&time%3E=2006-11-19T00%3A00%3A00Z&time%3C=2022-11-26T12%3A45%3A00Z"
 
 dfsal <- read.csv(url(jor_bas))
-
-
 
 #remove first row bc it describes data units
 load_data <- function(dataset,depth){
@@ -104,7 +101,7 @@ return(list("dfsal"=dfsal_daily_mean,
 
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 
-wmg = load_data(bo1_buoy,depth = 50)
+wmg = load_data(wmg_buoy,depth = 20)
 
 mbay = load_data(ma_bay,depth = 20)
 
@@ -114,18 +111,89 @@ pbay = load_data(pen_bay,depth = 1)
 
 norchan=load_data(nor_chan,depth = 9.96921e+36)
 
-gom_nit = load_data(nitrate_gom)
 
-ggplot(data = norchan$dfsal[norchan$dfsal$season == "Summer",])+
-  geom_boxplot(aes(x=week,y=salinity_daily_mean))+
+wmg_coher = data.frame(date = wmg$dfsal$date,salt_mean = wmg$dfsal$salinity_daily_mean)
+mbay_coher = data.frame(date = mbay$dfsal$date,salt_mean = mbay$dfsal$salinity_daily_mean)
+jorbas_coher = data.frame(date = jorb$dfsal$date,salt_mean = jorb$dfsal$salinity_daily_mean)
+pbay_coher = data.frame(date = pbay$dfsal$date,salt_mean = pbay$dfsal$salinity_daily_mean)
+norchan_coher = data.frame(date = norchan$dfsal$date,salt_mean = norchan$dfsal$salinity_daily_mean)
+
+#put all data frames into list
+df_list <- list(jorbas_coher,norchan_coher,wmg_coher,mbay_coher,salt_merged_agg)
+
+#merge all data frames in list
+df_sal_merged <-df_list %>% reduce(full_join, by='date')
+df_sal_merged$year <- year(df_sal_merged$date)
+df_sal_merged$week <- week(df_sal_merged$date)
+
+metseasons <- c(
+  "01" = "Winter", "02" = "Winter",
+  "03" = "Spring", "04" = "Spring", "05" = "Spring",
+  "06" = "Summer", "07" = "Summer", "08" = "Summer",
+  "09" = "Fall", "10" = "Fall", "11" = "Fall",
+  "12" = "Winter")
+seasons = metseasons[format(df_sal_merged$date, "%m")]
+df_sal_merged$season = seasons
+
+head(df_sal_merged)
+
+df_sal_merged %>% filter(season =="Summer",year>=2006) %>% ggplot()+
+  geom_boxplot(aes(x=as.factor(week),y=wmg_salt))+
   facet_grid(cols=vars(year))+
   scale_x_discrete(breaks=seq(23,36,5))+
   ylab("Salinity")+
   xlab("Week of Year")+
-  ggtitle(paste0("Summer Salinity at "," Northeast Channel ",as.character(norchan$station)))
+  ggtitle(paste0("Summer Salinity at "," Western Maine Gulf"))
 
-ggsave(filename=paste0(basepath,"figures/environmental/salinity/summer-salinity-norchan-N01.png"),
+ggsave(filename=paste0(basepath,"figures/environmental/salinity/summer-salinity-wmg.png"),
        width = 2000,height=700,units="px",dpi =175)
+
+
+df_sal_merged %>% filter(season =="Summer",year>=2006) %>% ggplot()+
+  geom_boxplot(aes(x=as.factor(week),y=norchan_salt))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Salinity")+
+  xlab("Week of Year")+
+  ggtitle(paste0("Summer Salinity at "," Northeast Channel"))
+
+ggsave(filename=paste0(basepath,"figures/environmental/salinity/summer-salinity-norchan.png"),
+       width = 2000,height=700,units="px",dpi =175)
+
+
+df_sal_merged %>% filter(season =="Summer",year>=2006) %>% ggplot()+
+  geom_boxplot(aes(x=as.factor(week),y=jorbas_salt))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Salinity")+
+  xlab("Week of Year")+
+  ggtitle(paste0("Summer Salinity at "," Jordan Basin"))
+
+ggsave(filename=paste0(basepath,"figures/environmental/salinity/summer-salinity-jbas.png"),
+       width = 2000,height=700,units="px",dpi =175)
+
+df_sal_merged %>% filter(season =="Summer",year>=2006) %>% ggplot()+
+  geom_boxplot(aes(x=as.factor(week),y=mbay_salt))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Salinity")+
+  xlab("Week of Year")+
+  ggtitle(paste0("Summer Salinity at "," MA Bay"))
+
+ggsave(filename=paste0(basepath,"figures/environmental/salinity/summer-salinity-mbay.png"),
+       width = 2000,height=700,units="px",dpi =175)
+
+df_sal_merged %>% filter(season =="Summer",year>=2006) %>% ggplot()+
+  geom_boxplot(aes(x=as.factor(week),y=mbay_salt))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Salinity")+
+  xlab("Week of Year")+
+  ggtitle(paste0("Summer Salinity at "," MA Bay"))
+
+ggsave(filename=paste0(basepath,"figures/environmental/salinity/summer-salinity-mbay.png"),
+       width = 2000,height=700,units="px",dpi =175)
+
 
 
 ggplot(data = norchan$dfsal[norchan$dfsal$season == "Spring",])+
@@ -184,10 +252,9 @@ ggplot(data = mbay$dfsal[mbay$dfsal$season == "Summer",])+
   xlab("Week of Year")+
   ggtitle(paste0("Summer Salinity at "," MA Bay ",as.character(mbay$station)))
 
-f
-ggsave(filename="C:\\Users\\Miraflor P Santos\\comm-sync\\figures\\environmental\\salinity\\summer-salinity-MA-bay.png",
-       width = 2000,height=500,units="px",dpi =175)
 
+ggsave(filename=paste0(basepath,"/figures/environmental/salinity/summer-salinity-MA-bay.png"),
+       width = 2000,height=500,units="px",dpi =175)
 
 
 ggplot()+
@@ -432,3 +499,7 @@ plot_wtc_arc(dfcarbon_group_merged,res,title="",
              save_folder=paste0(basepath,"/figures/biwavelet_coherence/"),
              save_name = paste0("coherence_salt_phase_","norchan-mvco",".png"),
              plot.phase=TRUE)
+
+
+gom_nit = load_data(nitrate_gom)
+

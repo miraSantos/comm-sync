@@ -50,14 +50,18 @@ dfcurrent_real$season = seasons
 
 head(dfcurrent_real)
 
+yl <- expression("Current (cm s"^"-1)")
 dfcurrent_real %>% filter(season=="Summer") %>% ggplot() +
   geom_point(aes(x=height,y=current))+  facet_grid(cols=vars(year))+
-  ggtitle("Summer Current Profiles")+
+  xlab("Height (m)")+ylab(yl)+
   geom_hline(yintercept=0,color="red")
+
+ggsave(filename=paste0(basepath,"/figures/summer_current_lentz.png"),width=1000,height=500,units="px",dpi=100)
 
 dfcurrent_real %>% filter(season=="Winter") %>% ggplot() +
   geom_point(aes(x=height,y=current))+  facet_grid(cols=vars(year))+
   ggtitle("Winter Current Profiles")
 
+ggsave(filename=paste0(basepath,"/figures/winter_current_lentz.png"),width=1000,height=500,units="px",dpi=100)
 
 

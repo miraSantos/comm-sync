@@ -79,7 +79,9 @@ save(salt_merged_agg,file=paste0(basepath,"/data/r_objects/unfilled/salinity_202
      
 # Plotting salinity
 
-salt_merged_agg %>% ggplot() + geom_point(aes(x=date,y=salt_mean))+scale_x_date(date_breaks="2 year",date_labels = "%Y")
+salt_merged_agg %>% ggplot() + geom_point(aes(x=date,y=salt_mean))+
+  xlab("Time (years)")+ylab("Salinity (psu)")+
+  scale_x_date(date_breaks="2 year",date_labels = "%Y")
 
 salt_merged_agg %>% filter(year>2019) %>% ggplot() + geom_point(aes(x=date,y=salt_mean))
 
@@ -91,5 +93,32 @@ ggplot(data=salt_merged_agg[(salt_merged_agg$season=="Summer")&(salt_merged_agg$
   ggtitle("Summer Salinity at MVCO")+
   xlab("Week of Year")
 
+
 ggsave(filename=paste0(basepath,"/figures/environmental/salinity/summer-salinity-mvco.png"),
        width = 2000,height=500,units="px",dpi =175)
+
+
+metseasons <- c(
+  "01" = "Winter", "02" = "Winter",
+  "03" = "Spring", "04" = "Spring", "05" = "Spring",
+  "06" = "Summer", "07" = "Summer", "08" = "Summer",
+  "09" = "Fall", "10" = "Fall", "11" = "Fall",
+  "12" = "Winter")
+seasons = metseasons[format(dfwave$date, "%m")]
+dfwave$season = seasons
+
+dfwave<- read.csv("/home/mira/MIT-WHOI/github_repos/comm-sync/data/mvco/12m/12m_data.txt")
+head(dfwave)
+dfwave$date <- as.Date(dfwave$atime,format="%d-%b-%Y %H:%M:%S")
+dfwave$year <- year(dfwave$date)
+dfwave$week <- as.factor(week(dfwave$date))
+dfwave%>% filter(year > 2005,season=="Summer") %>% ggplot() + 
+  geom_boxplot(aes(x=week,y=wave_height_all))+
+  facet_grid(cols=vars(year))+
+  scale_x_discrete(breaks=seq(23,36,5))+
+  ylab("Wave Height (m)")+
+  xlab("Week of Year")
+
+ggsave(filename=paste0(basepath,"/figures/environmental/summer-wave-height.png"),
+       width = 2000,height=500,units="px",dpi =175)
+
