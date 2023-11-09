@@ -1,4 +1,4 @@
-list.of.packages <- c("ggplot2","ncdf4","raster","sf","stars","rasterVis")
+list.of.packages <- c("ggplot2","ncdf4","raster","sf","stars","usmap")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
@@ -15,7 +15,6 @@ ppd_path <- paste0(basepath,"/data/ecomon_data/OCCCI/PPD-VGPM2/")
 ppd_list <- list.files(ppd_path)
 
 df_ppd <- data.frame(ppd_sum=numeric(),year=numeric(),week=numeric())
-
 
 for(ppd_index in 10:length(ppd_list)){print(ppd_index)
 ppd <-nc_open(paste0(ppd_path,ppd_list[ppd_index]))
@@ -44,8 +43,46 @@ years = rep(substring(ppd_list[ppd_index],4,7),length(ppd_sum))
 week_num = seq(1,length(ppd_sum),1)
 temp_df <- data.frame(ppd_sum=ppd_sum,year=years,week=week_num)
 df_ppd <- rbind(df_ppd,temp_df)
+
+for(week in 1:52){print(week)
+ppd.slice <- ppd.array[,,week]
+r <- raster(t(ppd.slice), xmn=min(lon), xmx=max(lon), ymn=min(lat), ymx=max(lat), crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
+r <- flip(r, direction='y')
+
+plot(r,zlim=c(0,14),ylim=c(34,46),xlab="Longitude (Deg W)",ylab="Latitude (Deg N)",main="Net Primary Production (gCarbon/m^2/Day)")
+rect(lon_min,lat_min,lon_max,lat_max,border="green")
+png(file=paste0(basepath,"/figures/environmental/PPD/ppd_map/ppd_map_",substring(ppd_list[ppd_index],4,7),"_",as.character(week),".png"))
+
+dev.off()
+}
 nc_close(ppd)
 }
+
+ppd_index = 1
+ppd <-nc_open(paste0(ppd_path,ppd_list[ppd_index]))
+
+lon <- ncvar_get(ppd, "longitude")
+lat <- ncvar_get(ppd, "latitude", verbose = F)
+t <- ncvar_get(ppd, "time")
+
+lon_min = -71
+lon_max = -69
+lat_min = 40.5
+lat_max = 42
+
+lon_ind = which((lon > lon_min)&(lon<lon_max))
+lat_ind = which((lat> lat_min)&(lat<lat_max))
+
+ppd.array <- ncvar_get(ppd,"PPD_MEAN") #store the data in a 3-dimensional array
+
+week=1
+ppd.slice <- ppd.array[,,week]
+r <- raster(t(ppd.slice), xmn=min(lon), xmx=max(lon), ymn=min(lat), ymx=max(lat), crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
+r <- flip(r, direction='y')
+
+plot(r,zlim=c(0,14),ylim=c(34,46),xlab="Longitude (Deg W)",ylab="Latitude (Deg N)",main="Net Primary Production (gCarbon/m^2/Day)")
+rect(lon_min,lat_min,lon_max,lat_max,border="green")
+png(file=paste0(basepath,"/figures/environmental/ppd_map_",substring(ppd_list[ppd_index],4,7),"_",as.character(week),".png"))
 
 df_ppd$date <- as.Date(make_datetime(year = as.numeric(df_ppd$year)) + weeks(df_ppd$week))
 
@@ -80,11 +117,4 @@ ggplot(data=df_ppd) + geom_boxplot(aes(x=as.factor(week),y=ppd_sum))+
 ggsave(filename=paste0(basepath,"/figures/environmental/PPD/mvco_region_ppd_mean_regime.png"),
        width=1000,height=500,units="px",dpi=120)
 
-
-ppd.slice <- ppd.array[,,32]
-r <- raster(t(ppd.slice), xmn=min(lon), xmx=max(lon), ymn=min(lat), ymx=max(lat), crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
-r <- flip(r, direction='y')
-
-plot(r,zlim=c(0,14),ylim=c(34,46),xlab="Longitude (Deg W)",ylab="Latitude (Deg N)",main="Net Primary Production (gCarbon/m^2/Day)")
-rect(lon_min,lat_min,lon_max,lat_max,border="green")
 
