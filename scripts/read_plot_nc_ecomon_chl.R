@@ -1,6 +1,6 @@
 
 
-list.of.packages <- c("ggplot2","ncdf4","raster","sf","stars","rasterVis")
+list.of.packages <- c("ggplot2","ncdf4","raster","sf","lubridate")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
@@ -17,7 +17,7 @@ chl_path <- paste0(basepath,"data/ecomon_data/OCCCI/CHLOR_A-CCI/")
 chl_list <- list.files(chl_path)
 
 df_chl <- data.frame(chl_sum=numeric(),year=numeric(),week=numeric())
-
+chl_index=10
 chl <-nc_open(paste0(chl_path,chl_list[chl_index]))
 print(chl)
 
@@ -71,15 +71,15 @@ df_chl$regime[regime_3_index] = paste0(as.character(regime_2_end)," - 2022")
 
 ggplot(data=df_chl) + geom_point(aes(x=date,y=chl_sum))+
   scale_x_date(date_breaks="2 year",date_labels="%Y")+
-  ylab("Chl-a mean (mg m^-3)")+xlab("Time (years)")
+  ylab(expression("Chl-a mean (mg m"^-3*")"))+xlab("Time (years)")
 ggsave(filename=paste0(basepath,"/figures/environmental/chl/mvco_region_chl_mean.png"),width=1000,height=500,units="px",dpi=120)
 
 ggplot(data=df_chl) + geom_boxplot(aes(x=as.factor(week),y=chl_sum))+
   facet_grid(cols=vars(regime))+
   scale_x_discrete(breaks=seq(1,52,5))+
-  xlab("Week")+ylab("Chl-a (mg m^-3)")
+  ylab(expression("Chl-a mean (mg m"^-3*")"))+xlab("Time (weeks)")
 ggsave(filename=paste0(basepath,"/figures/environmental/chl/mvco_region_chl_mean_regime.png"),
-       width=1000,height=500,units="px",dpi=120)
+       width=1000,height=500,units="px",dpi=100)
 
 chl.slice <- chl.array[,,32]
 r <- raster(t(chl.slice), xmn=min(lon), xmx=max(lon), ymn=min(lat), ymx=max(lat), crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))

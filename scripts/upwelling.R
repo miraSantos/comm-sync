@@ -256,9 +256,7 @@ ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui),size=2)+
   facet_grid(cols=vars(year))+
   # scale_x_discrete(breaks=seq(152,243,20))+
   xlab("Day of Year")+
-  ylab("CUI (m^2/s)")+
-  ggtitle("Summer CUI (Eastward and Westward)")
-
+  ylab("CUI (m^2/s)")
 
 ggsave(filename=paste0(basepath,"figures/environmental/wind/summer-yearly-east-west-upwelling.png"),
        width = 2300,height=500,units="px",dpi =175)
@@ -309,9 +307,7 @@ ggplot(cui_long) + geom_line(aes(x=doy_numeric,y=cui),size=2)+
   facet_grid(cols=vars(year))+
   # scale_x_discrete(breaks=seq(152,243,20))+
   xlab("Day of Year")+
-  ylab("CUI (m^2/s)")+
-  ggtitle("Summer CUI (Northward and Southward)")
-
+  ylab("CUI (m^2/s)")
 
 ggsave(filename=paste0(basepath,"figures/environmental/wind/summer-yearly-north-south-upwelling.png"),
        width = 2300,height=500,units="px",dpi =175)

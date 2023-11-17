@@ -1,172 +1,76 @@
 
-list.of.packages <- c("readxl","fields","ggplot2","sf","broom","dplyr","lubridate")
+list.of.packages <- c("readxl","fields","ggplot2","sf","broom","dplyr","lubridate","sp")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
+remotes::install_github("NEFSC/NEFSC-Spatial")
+library(NEFSCspatial)
 
 load(paste0(basepath,"/data/ecomon_nutrients_2007_2023.RData"))
-
-nes_url <- paste0(basepath,"/data/shapefile/lme.shp") #shape file from https://www.marineregions.org/gazetteer.php?p=details&id=8551
-nes_shp<- read_sf(nes_url)
+load(paste0(basepath,"/data/strata_nutrients.RData"))
 
 
-  
-df_nut %>% filter(nutrients_flag == 2,lat >40,lat <44,year==2012,((season == "Spring")| (season == "Summer"))) %>% ggplot() +
-geom_sf(data=nes_shp) +
-geom_point(aes(x=lon,y=lat,color=depth_sampling))+
-ylim(40,44)+
-xlim(-73,-66)+
-scale_color_gradient(low="yellow",high="red")
+regime_1_end = 2012
+regime_2_end = 2018
+regime_1_index = (which(dfj$year < regime_1_end))
+regime_2_index = (which((dfj$year >= regime_1_end)&(dfj$year < regime_2_end)))
+regime_3_index = (which(dfj$year >= regime_2_end))
 
+dfj$regime <- NaN
 
-df_nut %>% filter(nutrients_flag == 2,lat >40,lat <44,depth_sampling>30,((season == "Spring")| (season == "Summer"))) %>% ggplot() +
-  geom_sf(data=nes_shp) +
-  geom_point(aes(x=lon,y=lat,color=nitrite_nitrate))+
-  ylim(40,44)+
-  xlim(-73,-66)+
-  facet_grid(cols=vars(year))+
-  scale_color_gradient(low="yellow",high="red")
-
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/ecomon_nitrite_nitrate_yearly.png"),width=3000,height=500,units="px",dpi=100)
-
-
-df_nut %>% filter(silicate != -999,nutrients_flag == 2,lat >40,lat <44,depth_sampling>30,((season == "Spring")| (season == "Summer"))) %>% ggplot() +
-  geom_sf(data=nes_shp) +
-  geom_point(aes(x=lon,y=lat,color=silicate))+
-  ylim(40,44)+
-  xlim(-73,-66)+
-  facet_grid(cols=vars(year))+
-  scale_color_gradient(low="yellow",high="red")
-
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/ecomon_silicate_yearly.png"),width=3000,height=500,units="px",dpi=100)
-
-
-df_nut %>% filter(silicate != -999,nutrients_flag == 2,
-                  lat >41,lat <42.5,lon> -71,lon < -69,
-                  depth_sampling>30,
-                  ((season == "Spring")| (season == "Summer"))) %>% ggplot() +
-  geom_sf(data=nes_shp) +
-  geom_point(aes(x=lon,y=lat,color=silicate))+
-  ylim(40,44)+
-  xlim(-73,-66)+
-  facet_grid(cols=vars(year))+
-  scale_color_gradient(low="yellow",high="red")
-
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/ecomon_silicate_yearly_mvco.png"),width=3000,height=500,units="px",dpi=100)
-
-df_nut %>% filter(ammonia != -999,nutrients_flag == 2,
-                  lat >41,lat <42.5,lon> -71,lon < -69,
-                  depth_sampling>30,
-                  ((season == "Spring")| (season == "Summer"))) %>% ggplot() +
-  geom_sf(data=nes_shp) +
-  geom_point(aes(x=lon,y=lat,color=ammonia))+
-  ylim(40,44)+
-  xlim(-73,-66)+
-  facet_grid(cols=vars(year))+
-  scale_color_gradient(low="yellow",high="red")
-
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/ecomon_ammonia_yearly_mvco.png"),width=3000,height=500,units="px",dpi=100)
-
-
-df_nut %>% filter(phosphate != -999,nutrients_flag == 2,
-                  lat >40,lat <44,lon> -73,lon < -66,
-                  depth_sampling>30,
-                  ((season == "Spring")| (season == "Summer"))) %>% ggplot() +
-  geom_sf(data=nes_shp) +
-  geom_point(aes(x=lon,y=lat,color=phosphate))+
-  ylim(40,44)+
-  xlim(-73,-66)+
-  facet_grid(cols=vars(year))+
-  scale_color_gradient(low="yellow",high="red")
-
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/ecomon_phosphate_yearly.png"),width=3000,height=500,units="px",dpi=100)
-
-
-df_nut %>% filter(nitrite_nitrate != -999,nutrients_flag == 2,
-                  lat >40,lat <44,lon> -73,lon < -66,
-                  depth_sampling>30,
-                  ((season == "Spring")| (season == "Summer"))) %>% ggplot() +
-  geom_sf(data=nes_shp) +
-  geom_point(aes(x=lon,y=lat,color=nitrite_nitrate))+
-  ylim(40,44)+
-  xlim(-73,-66)+
-  facet_grid(cols=vars(year))+
-  scale_color_gradient(low="yellow",high="red")
-
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/ecomon_nitrite_nitrate_yearly.png"),width=3000,height=500,units="px",dpi=100)
+dfj$regime[regime_1_index] = paste0("2006 - ",as.character(regime_1_end-1))
+dfj$regime[regime_2_index] = paste0(as.character(regime_1_end)," - ",as.character(regime_2_end-1))
+dfj$regime[regime_3_index] = paste0(as.character(regime_2_end)," - 2022")
 
 
 
-df_nut %>% filter(silicate != -999,nutrients_flag == 2,
-                  lat >41,lat <42.5,lon> -71,lon < -69,
-                  depth_sampling>40,
-                   (season == "Summer")) %>% ggplot() +
-  geom_point(aes(x=date,y=silicate))
+#PLOTTING NUTRIENT PROFILES
+strata_index = c(21,24,25,20)
+dfj %>% filter(season=="Summer",nitrite_nitrate!=-999,STRATA %in% strata_index)  %>% ggplot() +
+  geom_sf(data=EcoMon_Strata$geometry[strata_index])+
+  geom_point(aes(x=lon,y=lat,color=nitrite_nitrate))
+
+dfj %>% filter(season=="Summer",nitrite_nitrate!=-999,STRATA %in% c(21,24,25,20))  %>% ggplot() +
+  geom_point(aes(x=nitrite_nitrate,y=depth_sampling)) + facet_grid(cols=vars(regime))+
+  scale_y_reverse()+
+  xlab(expression("Nitrite and Nitrate (umol kg"^-1*")"))+ylab("Depth (m)")
+
+ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/nitrite_nitrate_profiles_regime.png"),width=800,height=600,units="px",dpi=120)
+
+dfj %>% filter(season=="Summer",silicate!=-999,STRATA %in% c(21,24,25,20))  %>% ggplot() +
+  geom_point(aes(x=silicate,y=depth_sampling)) + facet_grid(cols=vars(regime))+
+  scale_y_reverse()+
+  xlab(expression("Silicate (umol kg"^-1*")"))+ylab("Depth (m)")
+
+ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/silicate_profiles_regime.png"),width=800,height=600,units="px",dpi=120)
 
 
-df_nut %>% filter(nitrite_nitrate != -999,nutrients_flag == 2,
-                  lat >41,lat <42.5,lon> -71,lon < -69,
-                  depth_sampling>40) %>% ggplot() +
-  geom_point(aes(x=date,y=nitrite_nitrate))+
-  xlab("Time")+ylab("Nitrite+Nitrate (umol/kg)")+
-  scale_x_date(date_breaks="1 year",date_labels = "%Y")
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/ecomon_nitrite_nitrate_mvco_timeseries.png"),width=800,height=300,units="px",dpi=120)
+dfj %>% filter(season=="Summer",phosphate!=-999,STRATA %in% c(21,24,25,20))  %>% ggplot() +
+  geom_point(aes(x=phosphate,y=depth_sampling)) + facet_grid(cols=vars(regime))+
+  scale_y_reverse()+
+  xlab(expression("Phosphate (umol kg"^-1*")"))+ylab("Depth (m)")
+
+ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/phosphate_profiles_regime.png"),width=800,height=600,units="px",dpi=120)
 
 
-df_nut %>% filter(ammonia!= -999,nutrients_flag == 2,
-                  lat >41,lat <42.5,lon> -71,lon < -69,
-                  depth_sampling>40) %>% ggplot() +
-  geom_point(aes(x=date,y=ammonia))+
-  xlab("Time")+ylab("Ammonia (umol/kg)")+
-  scale_x_date(date_breaks="1 year",date_labels = "%Y")
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/ecomon_ammonia_mvco_timeseries.png"),width=800,height=300,units="px",dpi=120)
+dfj %>% filter(season=="Summer",ammonia!=-999,STRATA %in% c(21,24,25,20))  %>% ggplot() +
+  geom_point(aes(x=ammonia,y=depth_sampling)) + facet_grid(cols=vars(regime))+
+  scale_y_reverse()+
+  xlab(expression("Ammonia (umol kg"^-1*")"))+ylab("Depth (m)")
 
-
-df_nut %>% filter(phosphate!= -999,nutrients_flag == 2,
-                  lat >41,lat <42.5,lon> -71,lon < -69,
-                  depth_sampling>=30) %>% ggplot() +
-  geom_point(aes(x=date,y=phosphate))+
-  xlab("Time")+ylab("Phosphate (umol/kg)")+
-  scale_x_date(date_breaks="1 year",date_labels = "%Y")
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/ecomon_phosphate_mvco_timeseries.png"),width=800,height=300,units="px",dpi=120)
-
-
-obs_yr <- df_nut %>% filter(nitrite_nitrate != -999,nutrients_flag == 2,
-                  lat >41,lat <42.5,lon> -71,lon < -69,
-                  depth_sampling>40) %>% group_by(year) %>% summarise(n_obs = length(date))
-
-ggplot(obs_yr) + geom_point(aes(x=year,y=n_obs)) +
-  scale_x_continuous(breaks=seq(2010,2022,1))
-
-df_nut %>% filter(nitrite_nitrite!=-999,nutrients_flag == 2,lat >40) %>% ggplot() +
-  geom_sf(data=nes_shp) +
-  geom_point(aes(x=lon,y=lat,color=nitrite_nitrate))+facet_grid(cols=vars(year))+
-  scale_color_gradient(low="yellow",high="red")
-
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/summer_ecomon_nitrite_nitrate_yearly.png"),width=3000,height=500,units="px",dpi=100)
-
-
-df_nut %>% filter(silicate!=-999,nutrients_flag == 2,lat >40,season=="Summer",depth_sampling > 20) %>% ggplot() +
-  geom_sf(data=nes_shp)+
-  geom_point(aes(x=lon,y=lat,color=silicate))+facet_grid(cols=vars(year))+
-  ylim(40,44)+
-  xlim(-73,-66)+
-  scale_color_gradient2(low="red",mid="blue",high="purple",midpoint=15)
-
-df_nut %>% filter(silicate!=-999,nutrients_flag == 2,lat >40,season=="Summer") %>% ggplot() +
-  geom_point(aes(x=date,y=depth_sampling))
-
-
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/summer_ecomon_silicate_yearly.png"),width=3000,height=500,units="px",dpi=100)
-
-df_nut %>% ggplot() + geom_point(aes(x=date,y=nitrite_nitrate))+
-  scale_x_date(date_breaks="1 year",date_labels = "%Y")
+ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/ammonia_profiles_regime.png"),width=800,height=600,units="px",dpi=120)
 
 
 
-ggplot(data=df_nut) + geom_point(aes(x=date,y=depth_bottom),color="black",shape="x",size=3)+
-  geom_point(aes(x=date,y=depth_sampling),color="red",alpha=0.5)+
-  scale_x_date(date_breaks="1 year",date_labels="%Y")+
-  scale_y_continuous(breaks=seq(0,5000,500))
-  
+dfj %>% filter(season=="Summer",nitrite_nitrate!=-999,STRATA %in% c(21,24,25,20))  %>% ggplot() +
+  geom_point(aes(x=nitrite_nitrate,y=depth_sampling)) + facet_grid(cols=vars(year))+
+  scale_y_reverse()+
+  xlab(expression("Nitrite and Nitrate (umol kg"^-1*")"))+ylab("Depth (m)")
+
+
+
+dfj %>% filter(season=="Summer",nitrite_nitrate!=-999,STRATA %in% c(21,24,25,20))  %>% ggplot() +
+  geom_point(aes(x=nitrite_nitrate,y=depth_sampling)) + facet_grid(cols=vars(year))+
+  scale_y_reverse()+
+  xlab(expression("Silicate (umol kg"^-1*")"))+ylab("Depth (m)")
 

@@ -4,7 +4,7 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-#data are very bad
+#data are very bad and don't have nutrients (will exclude)
 df_nut_2006_1 <- read.csv(paste0(basepath,"/data/ecomon_data/nutrients/2006/sko612.csv"))
 head(df_nut_2006_1)
 

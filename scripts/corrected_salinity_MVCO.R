@@ -83,7 +83,7 @@ salt_merged_agg %>% ggplot() + geom_point(aes(x=date,y=salt_mean))+
   xlab("Time (years)")+ylab("Salinity (psu)")+
   scale_x_date(date_breaks="2 year",date_labels = "%Y")
 
-salt_merged_agg %>% filter(year>2019) %>% ggplot() + geom_point(aes(x=date,y=salt_mean))
+salt_merged_agg %>% filter(year>2005) %>% ggplot() + geom_point(aes(x=date,y=salt_mean))
 
 #plotting summer salinity
 ggplot(data=salt_merged_agg[(salt_merged_agg$season=="Summer")&(salt_merged_agg$year >=2006),], aes(x=week))+

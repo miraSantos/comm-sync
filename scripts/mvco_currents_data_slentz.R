@@ -56,7 +56,7 @@ dfcurrent_real %>% filter(season=="Summer") %>% ggplot() +
   xlab("Height (m)")+ylab(yl)+
   geom_hline(yintercept=0,color="red")
 
-ggsave(filename=paste0(basepath,"/figures/summer_current_lentz.png"),width=1000,height=500,units="px",dpi=100)
+ggsave(filename=paste0(basepath,"/figures/summer_current_lentz.png"),width=1000,height=300,units="px",dpi=100)
 
 dfcurrent_real %>% filter(season=="Winter") %>% ggplot() +
   geom_point(aes(x=height,y=current))+  facet_grid(cols=vars(year))+
