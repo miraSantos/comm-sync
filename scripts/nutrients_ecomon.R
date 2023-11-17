@@ -5,12 +5,29 @@ if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
 #data are very bad and don't have nutrients (will exclude)
-df_nut_2006_1 <- read.csv(paste0(basepath,"/data/ecomon_data/nutrients/2006/sko612.csv"))
-head(df_nut_2006_1)
+df1= read.delim(paste0(basepath,"/data/ecomon_data/raw_townsend/RebuckGoMaineNutrients.txt"),
+                sep = "\t",header=F)[,1:16]
+
+df2 =  read.delim(paste0(basepath,"/data/ecomon_data/raw_townsend/gomregion.txt"),
+                  sep = "\t",header=F)[,1:16]
+headers = c("month","day","year","lon", "lat",
+            "depth_bottom", "depth_sampling","temp","salinity",
+            "nitrite_nitrate","silicate","phosphate", "extracted_chlorophyll",
+            "phosphate_flag","silicate_flag","nitrite_nitrate_flag")
+colnames(df1) <- headers
+colnames(df2) <- headers
+
+df1$date <- as.Date(with(df1,paste(year,month,day,sep="-")),"%Y-%m-%d")
+df2$date <- as.Date(with(df2,paste(year,month,day,sep="-")),"%Y-%m-%d")
 
 df_nut_2007 <- read_excel(paste0(basepath,"/data/ecomon_data/nutrients/2007/E01_GOMECC1R.xlsx"))
 df_nut_2007$date <- as.Date(with(df_nut_2007,paste(Year,Month,Day,sep="-")),"%Y-%m-%d")
 
+
+df_nut_2007%>% filter(`NITRAT_FLAG_W`==2,`NITRIT_FLAG_W`==2) %>% ggplot()+
+  geom_point(aes(x=date,y=`NITRAT_UMOL/KG`,color="Nitrate"))+
+  geom_point(aes(x=date,y=`NITRIT_UMOL/KG`,color="Nitrite"))+
+  xlab("Date")+ylab("Concentration (umol/kg)")
 df_nut_2007$nitrite_nitrate <- df_nut_2007$`NITRAT_UMOL/KG` + df_nut_2007$`NITRIT_UMOL/KG`
 df_nut_2007 <- df_nut_2007 %>% rename("lat" = "LATITUDE_DEC_DEG",
                                       "lon" = "LONGITUDE_DEC_DEG",
@@ -20,16 +37,21 @@ df_nut_2007 <- df_nut_2007 %>% rename("lat" = "LATITUDE_DEC_DEG",
                                       "salinity_flag"="SALNTY_FLAG_W",
                                       "oxy"="CTDOXY_corrected_UMOL/KG",
                                       "silicate"="SILCAT_UMOL/KG",
+                                      "silicate_flag" = "SILCAT_FLAG_W",
                                       "ammonia"="NH4_UMOL/KG",
+                                      "ammonia_flag"="NH4_FLAG_W",
                                       "phosphate"="PHSPHT_UMOL/KG",
-                                      "nutrients_flag" = "SILCAT_FLAG_W") %>%
-  select(date,lat,lon,depth_bottom,temp,salinity,salinity_flag,oxy,silicate,nitrite_nitrate,ammonia,phosphate,nutrients_flag)
+                                      "phosphate_flag" = "PHSPHT_FLAG_W",
+                                      "cruise_id" = "Cruise ID") %>%
+  select(date,lat,lon,depth_bottom,temp,salinity,salinity_flag,
+         oxy,silicate,silicate_flag,nitrite_nitrate,ammonia,phosphate,nutrients_flag,cruise_id)
 df_nut_2007$depth_sampling = NaN
 
 
+
+df_nut_2009 <- read_excel(paste0(basepath,"/data/ecomon_data/nutrients/2009/NEFSC_nutrient.xlsx"))
 df_nut_2009$salinity_flag = 2
 df_nut_2009$nutrients_flag = 2
-df_nut_2009 <- read_excel(paste0(basepath,"/data/ecomon_data/nutrients/2009/NEFSC_nutrient.xlsx"))
 df_nut_2009$date <- as.Date(with(df_nut_2009,paste(Year,Month,Day,sep="-")),"%Y-%m-%d")
 
 df_nut_2009 <- df_nut_2009 %>% rename("lat" = "Latitude_DEC_DEG",

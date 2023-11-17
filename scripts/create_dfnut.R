@@ -3,9 +3,22 @@ dfnut_mvco_headers <- read.csv("/home/mira/MIT-WHOI/data/2023/mvco_nut_headers_2
 colnames(dfnut_mvco) <- dfnut_mvco_headers$V1
 head(dfnut_mvco)
 dfnut_mvco$nitrite_nitrate_mean = rowMeans(dfnut_mvco[c("nitrite_nitrate_a","nitrite_nitrate_b","nitrite_nitrate_c")],na.rm=T)
+dfnut_mvco$nitrite_nitrate_sd = apply(dfnut_mvco[c("nitrite_nitrate_a","nitrite_nitrate_b","nitrite_nitrate_c")], 1, sd, na.rm=TRUE)
+dfnut_mvco <- dfnut_mvco %>% mutate(nitrite_nitrate_rsd=nitrite_nitrate_sd/nitrite_nitrate_mean*100)
 dfnut_mvco$phosphate_mean = rowMeans(dfnut_mvco[c("phosphate_a","phosphate_b","phosphate_c")],na.rm=T)
 dfnut_mvco$ammonia_mean = rowMeans(dfnut_mvco[c("ammonia_a","ammonia_b","ammonia_c")],na.rm=T)
 dfnut_mvco$silicate_mean = rowMeans(dfnut_mvco[c("silicate_a","silicate_b","silicate_c")],na.rm=T)
+
+dfnut_mvco <- dfnut_mvco %>% rowwise() %>% mutate(nitrite_nitrate_mean = mean(c(nitrite_nitrate_a,nitrite_nitrate_b,nitrite_nitrate_c),na.rm=T),
+                                    nitrite_nitrate_rsd = sd(c(nitrite_nitrate_a,nitrite_nitrate_b,nitrite_nitrate_c),na.rm=T)/mean(c(nitrite_nitrate_a,nitrite_nitrate_b,nitrite_nitrate_c),na.rm=T)*100,
+                                    phosphate_mean = mean(c(phosphate_a,phosphate_b,phosphate_c),na.rm=T),
+                                    phosphate_rsd = sd(c(phosphate_a,phosphate_b,phosphate_c),na.rm=T)/mean(c(phosphate_a,phosphate_b,phosphate_c),na.rm=T)*100,
+                                    ammonia_mean = mean(c(ammonia_a,ammonia_b,ammonia_c),na.rm=T),
+                                    ammonia_rsd = sd(c(ammonia_a,ammonia_b,ammonia_c),na.rm=T)/ mean(c(ammonia_a,ammonia_b,ammonia_c),na.rm=T)*100,
+                                    silicate_mean = mean(c(silicate_a,silicate_b,silicate_c),na.rm=T),
+                                    silicate_rsd = sd(c(silicate_a,silicate_b,silicate_c),na.rm=T)/mean(c(silicate_a,silicate_b,silicate_c),na.rm=T)*100)
+
+ggplot(data=dfnut_mvco) + geom_point(aes(x=date,y=nitrite_nitrate_rsd))+xlab("Date")+ylab("COV")
 
 dfnut_mvco$date = as.Date(dfnut_mvco$Start_Date,format="%Y-%m-%d %H:%M:%S.0")
 dfnut_mvco$doy_numeric = yday(dfnut_mvco$date)

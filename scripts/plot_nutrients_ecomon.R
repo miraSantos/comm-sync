@@ -25,10 +25,11 @@ dfj$regime[regime_3_index] = paste0(as.character(regime_2_end)," - 2022")
 
 
 #PLOTTING NUTRIENT PROFILES
-strata_index = c(21,24,25,20)
+strata_index = c(21,24,25,20,19,23)
 dfj %>% filter(season=="Summer",nitrite_nitrate!=-999,STRATA %in% strata_index)  %>% ggplot() +
   geom_sf(data=EcoMon_Strata$geometry[strata_index])+
-  geom_point(aes(x=lon,y=lat,color=nitrite_nitrate))
+  geom_point(aes(x=lon,y=lat,color=nitrite_nitrate))+
+  geom_point(aes(x=-70.5226,y=41.3620),color="red",shape=8)
 
 dfj %>% filter(season=="Summer",nitrite_nitrate!=-999,STRATA %in% c(21,24,25,20))  %>% ggplot() +
   geom_point(aes(x=nitrite_nitrate,y=depth_sampling)) + facet_grid(cols=vars(regime))+

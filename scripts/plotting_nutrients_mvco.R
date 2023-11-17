@@ -9,6 +9,8 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
+nes_url <- "/home/mira/MIT-WHOI/github_repos/comm-sync/data/shapefile/lme.shp"
+nes_shp <- read_sf(nes_url)
 #######################################
 
 dfnut_mvco$doy_numeric <- factor(dfnut_mvco$doy_numeric)
@@ -34,21 +36,46 @@ dfnut_mvco$regime[regime_2_index] = paste0(as.character(regime_1_end)," - ",as.c
 dfnut_mvco$regime[regime_3_index] = paste0(as.character(regime_2_end)," - 2022")
 
 
-
-
-dfnut_mvco %>% filter(season=="Summer",Latitude >= 41)  %>% ggplot() +
-  geom_point(aes(x=nitrite_nitrate_mean,y=Depth)) +
-  facet_grid(cols=vars(regime))+
-  scale_y_reverse()+
-  xlab(expression("Nitrite and Nitrate (umol kg"^-1*")"))+ylab("Depth (m)")
-
 dfnut_mvco %>% filter(season=="Summer")  %>% ggplot() +
   geom_sf(data=nes_shp)+
   geom_point(aes(x=Longitude,y=Latitude,color=nitrite_nitrate_mean))+
   xlim(-71,-70.3)+
   ylim(41,41.8)
 
-ggplot(data=dfnut_mvco[dfnut_mvco$season=="Summer",],aes(x = month,y = nitrite_nitrate_mean)) +
+dfnut_mvco %>% filter(season=="Summer",year>=2006,nitrite_nitrate_rsd<=50)  %>% ggplot() +
+  geom_point(aes(x=nitrite_nitrate_mean,y=Depth)) +
+  facet_grid(cols=vars(regime))+
+  scale_y_reverse()+
+  xlab(expression("Nitrite and Nitrate (umol kg"^-1*")"))+ylab("Depth (m)")
+
+dfnut_mvco %>% filter(season=="Summer",year>=2006,Latitude >= 41,nitrite_nitrate_rsd<50)  %>% ggplot() +
+  geom_point(aes(x=nitrite_nitrate_mean,y=Depth)) +
+  facet_grid(cols=vars(year))+
+  scale_y_reverse()+
+  xlab(expression("Nitrite and Nitrate (umol kg"^-1*")"))+ylab("Depth (m)")
+
+dfnut_mvco %>% filter(season=="Summer",year>=2006,Depth <=10,nitrite_nitrate_rsd < 20)%>%
+  ggplot() + geom_boxplot(aes(x=as.factor(month),y=nitrite_nitrate_mean))+
+  facet_grid(cols=vars(year))+scale_x_discrete(breaks=seq(1,52,2))+
+  xlab("Week")+ylab("Nitrite + Nitrate (uM)")
+
+
+dfnut_mvco %>% filter(season=="Summer",year>=2006,Depth <=10)%>%
+  ggplot() + geom_boxplot(aes(x=as.factor(month),y=nitrite_nitrate_mean))+
+  facet_grid(cols=vars(regime))+
+  xlab("Week")+ylab("Nitrite + Nitrate (uM)")
+
+dfnut_mvco %>% filter(season=="Summer",year>=2006,Depth <=10)%>%
+  ggplot() + geom_boxplot(aes(x=as.factor(month),y=phosphate_mean))+
+  facet_grid(cols=vars(regime))+scale_x_discrete(breaks=seq(1,52,2))+
+  xlab("Week")+ylab("Phosphate (uM)")
+
+dfnut_mvco %>% filter(season=="Summer",year>=2006,Depth <=10)%>%
+  ggplot() + geom_boxplot(aes(x=as.factor(month),y=phosphate_mean))+
+  facet_grid(cols=vars(year))+scale_x_discrete(breaks=seq(1,52,2))+
+  xlab("Week")+ylab("Phosphate (uM)")
+
+dfnut_mvco  %>% ggplot(aes(x = month,y = nitrite_nitrate_mean)) +
   geom_boxplot(alpha=0.5) + 
   facet_grid(cols=vars(regime))+
   scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
