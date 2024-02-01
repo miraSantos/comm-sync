@@ -9,13 +9,13 @@ source("/dos/MIT-WHOI/community_sychrony/scripts/adv_biwavelet_packages.R")
 rm(wt)
 rm(wclust)
 
-load("/dos/MIT-WHOI/community_sychrony/data/r_objects/2023_Jul_10_dfcarbon_group.RData")
+load("/home/mira/MIT-WHOI/community_sychrony/data/r_objects/2023_Jul_10_dfcarbon_group.RData")
 
 nrows = 79
 ncols = 5677
 
 #path to folder with Rdata files for clustering
-root_path = "/dos/MIT-WHOI/community_sychrony/figures/biwavelet_coherence/wtc_arc_rdata_files/temp/"
+root_path = "/home/mira/MIT-WHOI/community_sychrony/figures/biwavelet_coherence/wtc_arc_rdata_files/temp/"
 #generate list of all RData files for clustering
 wt_list = list.files(path = root_path)
 #removing 2 groups bc they are full nans

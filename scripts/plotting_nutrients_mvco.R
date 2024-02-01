@@ -48,6 +48,14 @@ dfnut_mvco %>% filter(season=="Summer",year>=2006,nitrite_nitrate_rsd<=50)  %>% 
   scale_y_reverse()+
   xlab(expression("Nitrite and Nitrate (umol kg"^-1*")"))+ylab("Depth (m)")
 
+
+dfnut_mvco %>% filter(season=="Summer",year>=2006,nitrite_nitrate_rsd<=50)  %>% ggplot() +
+  geom_point(aes(x=nitrite_nitrate_mean,y=Depth)) +
+  facet_grid(cols=vars(year))+
+  scale_y_reverse()+
+  xlab(expression("Nitrite and Nitrate (umol kg"^-1*")"))+ylab("Depth (m)")
+
+
 dfnut_mvco %>% filter(season=="Summer",year>=2006,Latitude >= 41,nitrite_nitrate_rsd<50)  %>% ggplot() +
   geom_point(aes(x=nitrite_nitrate_mean,y=Depth)) +
   facet_grid(cols=vars(year))+

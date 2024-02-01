@@ -4,7 +4,11 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-df<- read.csv("/dos/MIT-WHOI/Week.2023.04.24-30/df_biovolume_interpolated_2023_April_27.csv")
+df<- read.csv("/home/mira/MIT-WHOI/Week.2023.04.24-30/df_biovolume_interpolated_2023_April_27.csv")
+
+ifcb_classlist <- read.csv("/home/mira/MIT-WHOI/github_repos/comm-sync/data/IFCB_classlist_type.csv")
+
+head(ifcb_classlist)
 
 # Perform wavelet clustering on the indices
 times<-(seq(1,nrow(df),1))
@@ -14,8 +18,6 @@ for (i in 1:length(all_index)){
   wt.t = wt(cbind(times,df[all_index[i]]))
   w.arr[i,,] = wt.t$wave
 }
-
-
 
 # Compute dissimilarity and distance matrices
 w.arr.dis <- wclust(w.arr)

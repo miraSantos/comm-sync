@@ -11,7 +11,8 @@ load(paste0(basepath,"/data/ecomon_nutrients_2007_2023.RData"))
 #loading ecomon polygons
 data("EcoMon_Strata")
 
-pnts_sf <- st_as_sf(na.omit(df_nut), coords = c('lon', 'lat'), crs = st_crs(EcoMon_Strata),remove=F)
+df_nut<- df_nut %>% filter(!is.na(df_nut$lat))
+pnts_sf <- st_as_sf(df_nut, coords = c('lon', 'lat'), crs = st_crs(EcoMon_Strata),remove=F)
 str(pnts_sf)
 p <- st_make_valid(EcoMon_Strata)
 dfj <- st_join(pnts_sf,p,left=T)
@@ -30,4 +31,32 @@ geom_text(data=EcoMon_Strata[which(EcoMon_Strata$STRATA%in%strata_index),],aes(l
 ggsave(paste0(basepath,"/figures/ecomon_strata_mvco.png"),width=800,height=800,units="px",dpi=120)
 
 
+dfj$year <- year(dfj$date)
+regime_1_start = 2006
+regime_1_end = 2012
+regime_2_end = 2018
+regime_1_index = (which(dfj$year < regime_1_end)&(dfj$year>=regime_1_start))
+regime_2_index = (which((dfj$year >= regime_1_end)&(dfj$year < regime_2_end)))
+regime_3_index = (which(dfj$year >= regime_2_end))
+
+dfj$regime <- NaN
+
+dfj$regime[regime_1_index] = paste0("2006 - ",as.character(regime_1_end-1))
+dfj$regime[regime_2_index] = paste0(as.character(regime_1_end)," - ",as.character(regime_2_end-1))
+dfj$regime[regime_3_index] = paste0(as.character(regime_2_end)," - 2022")
+
+
+metseasons <- c(
+  "01" = "Winter", "02" = "Winter",
+  "03" = "Spring", "04" = "Spring", "05" = "Spring",
+  "06" = "Summer", "07" = "Summer", "08" = "Summer",
+  "09" = "Fall", "10" = "Fall", "11" = "Fall",
+  "12" = "Winter")
+
+seasons = metseasons[format(dfj$date, "%m")]
+dfj$season = seasons
+
 save(dfj,file=paste0(basepath,"/data/strata_nutrients.RData"))
+
+
+
