@@ -15,65 +15,58 @@ mvco_strata = c(21,24,25,20)
 gom_basin = c(41,42,37,34)
 mvco_offshore = c(19,23)
 northeast_channel = c(38,39)
-strata_index = mvco_strata
-strata_name="mvco_nearshore"
-strata_index = mvco_offshore
-strata_name = "MVCO_offshore"
+gom_nearshore= c(36)
 
+# strata_index = mvco_strata
+# strata_name="mvco_nearshore"
 
+# strata_index = mvco_offshore
+# strata_name = "MVCO_offshore"
+
+strata_index = gom_nearshore
+strata_name = "GoM Nearshore"
+
+#########################################
+#generate data frame with column for strata_group i.e. column where each row is labeled with mvco_strat GOM_basin etc.
 dfj_strata <- dfj %>% mutate(strata_group = if_else(STRATA %in% mvco_strata,"mvco_strata",
                              if_else(STRATA %in% mvco_offshore,"MVCO_offshore",
-                                     if_else(STRATA %in% gom_basin,"GOM_basin",NA))))
-
-dfj %>% filter(season=="Summer",STRATA %in% strata_index,
-               nitrite_nitrate_flag==2,nitrite_nitrate!=-999,
-               regime!=NaN) %>%
-  mutate(lat=signif(lat,4),lon=signif(lon,4)) %>%
-  group_by(date,lat,lon)%>%
-  ggplot() +
-  facet_grid(cols=vars(regime))+
-  geom_sf(data=nes_shp)+
-  geom_point(aes(x=lon,y=lat,color=nitrite_nitrate))+
-  xlim(-75,-69)+
-  ylim(39,43)
-
+                                     if_else(STRATA %in% gom_basin,"GOM_basin",
+                                             if_else(STRATA %in% gom_nearshore, "GOM_nearshore",NA)))))
 
 ############################# GRIDDED PLOT
-dfj %>% mutate(lat=signif(lat,4),lon=signif(lon,4),
-                 depth_sampling_binned= cut(depth_sampling,breaks= seq(0,50,10),include.lowest=T)) %>%
+#TS plot per period and depth
+dfj %>% mutate(lat=signif(lat,4),
+               lon=signif(lon,4),
+                 depth_sampling_binned=cut(depth_sampling,breaks= seq(0,200,25),
+                                            include.lowest=T))%>%
   filter(season=="Summer",
          STRATA %in% strata_index,
          temp!=-999,salinity!=-999,
-         depth_sampling >= 20,
-         regime!=NaN)%>%
-  group_by(date,lat,lon)%>%
+         regime!=NaN,!is.na(depth_sampling))%>% 
   ggplot() + geom_point(aes(x=salinity,y=temp))+
-  facet_grid(rows = vars(depth_sampling_binned),
-             cols = vars(regime))+
-  xlab("Salinity (psu)") + ylab("Temperature (Deg C)")
+  facet_grid(cols = vars(regime))+
+  xlab("Salinity (psu)") + ylab(expression("Temperature ("*degree*"C)"))
 
 
 ###############################################################
-dfj %>% mutate(lat=signif(lat,4),lon=signif(lon,4),
-               depth_sampling_binned= cut(depth_sampling,breaks= seq(0,50,10),include.lowest=T)) %>%
+#PLOTTING TS plot per period colored by sampling depth below 20m depth
+dfj %>% mutate(lat=signif(lat,4),
+               lon=signif(lon,4),
+               depth_sampling_binned=cut(depth_sampling,breaks= seq(0,200,25),
+                                         include.lowest=T))%>%
   filter(season=="Summer",
          STRATA %in% strata_index,
          temp!=-999,salinity!=-999,
-         depth_sampling >= 20,
-         regime!=NaN)%>%
-  group_by(date,lat,lon)%>%
+         regime!=NaN,!is.na(depth_sampling))%>% 
   ggplot() + geom_point(aes(x=salinity,y=temp,color=depth_sampling))+
   facet_grid(cols = vars(regime))+
-  xlab("Salinity (psu)") + ylab("Temperature (Deg C)")+xlim(30,35)+ylim(5,20)
+  xlab("Salinity (psu)") + ylab("Temperature (Deg C)")
 
-dfj_test <- dfj %>% mutate(lat=signif(lat,4),lon=signif(lon,4),
-               depth_sampling_binned= cut(depth_sampling,breaks= seq(0,50,10),include.lowest=T))
-  
-
-ggsave(filename=paste0(basepath,"/figures/environmental/T_S_depth_strat_",strata_name,".png"),
+ggsave(filename=paste0(basepath,"/figures/environmental/TS_plots/T_S_depth_strat_",strata_name,".png"),
        width=1000,height=600,units="px",dpi=120)
 
 ########################
+#generate TS PLOTS OVER PERIOD and DEPTH FACETS
 dfj_strata %>% mutate(lat=signif(lat,4),lon=signif(lon,4),
                depth_sampling_binned= cut(depth_sampling,breaks= seq(0,50,10),include.lowest=T)) %>%
   filter(season=="Summer",
@@ -83,11 +76,60 @@ dfj_strata %>% mutate(lat=signif(lat,4),lon=signif(lon,4),
          regime!=NaN)%>%
   group_by(date,lat,lon)%>%
   ggplot() + 
-  geom_point(aes(x=salinity,y=temp,color=strata_group,shape=strata_group),alpha=0.4)+
+  geom_point(aes(x=salinity,y=temp,color=strata_group,shape=strata_group),alpha=0.7)+
   facet_grid(cols = vars(regime),rows=vars(depth_sampling_binned))+
   xlab("Salinity (psu)") + ylab("Temperature (Deg C)")+
   xlim(30,35)+ylim(5,20)+
-  scale_color_discrete(name="Strata Group",labels=c("GoM","MVCO Offshore","MVCO Nearshore"))
+  scale_color_discrete(name="Strata Group",labels=c("GoM basin","GoM nearshore","MVCO Offshore","MVCO Nearshore"))+
+  scale_shape_manual(values=c(1,2,3,4),name="Strata Group",labels=c("GoM basin","GoM nearshore","MVCO Offshore","MVCO Nearshore"))
+
+
+
+#############################################################
+
+#plot boxplot of salinity by depth and period
+dfj_strata %>% mutate(lat=signif(lat,4),lon=signif(lon,4),
+                      depth_sampling_binned= cut(depth_sampling,breaks= seq(0,50,10))) %>%
+  filter(season=="Summer",
+         temp!=-999,salinity!=-999,
+         salinity_flag==2,
+         strata_group != NaN,
+         depth_sampling_binned!="NA",
+         regime!=NaN,(strata_group=="mvco_strata"|strata_group=="MVCO_offshore"))%>%
+  group_by(date,lat,lon)%>%
+  ggboxplot(x="strata_group",y="salinity",color="strata_group") + 
+  facet_grid(cols=vars(regime),rows=vars(depth_sampling_binned)) +
+  stat_compare_means(label = "p.signif",
+                     method = "t.test",
+                     label.y=33)+
+  grids(linetype = "dashed")
+
+#BOXPLOT OF SALINITY OVER PERIOD AND DEPTH
+dfj_strata %>% mutate(lat=signif(lat,4),lon=signif(lon,4),
+                      depth_sampling_binned= cut(depth_sampling,breaks= seq(0,50,10),include.lowest=T)) %>%
+  filter(season=="Summer",
+         temp!=-999,salinity!=-999,
+         strata_group != NaN,
+         depth_sampling_binned!="NA",
+         regime!=NaN)%>%
+  group_by(date,lat,lon)%>%
+  ggplot() + 
+geom_boxplot(aes(x=salinity,y=strata_group,group=strata_group,color=strata_group))+
+    facet_grid(cols = vars(regime),rows=vars(depth_sampling_binned))+
+  xlab("Salinity (psu)") +
+  xlim(30,33)+
+  scale_color_discrete(name="Strata Group",labels=c("GoM basin","GoM nearshore","MVCO Offshore","MVCO Nearshore"))+
+  scale_shape_manual(values=c(1,2,3,4),name="Strata Group",labels=c("GoM basin","GoM nearshore","MVCO Offshore","MVCO Nearshore"))
+
+
+ggboxplot(data=df_temp,x="regime",y="nut_max",color="regime")+
+  stat_compare_means(method="anova",label.y=max(df_temp$nut_max)+1)+
+  xlab("Period") + ylab(expression("[Nitrite+Nitrate] (umol kg"^-1*")"))+
+  stat_compare_means(label = "p.signif", method = "t.test",
+                     ref.group = ".all.")+ labs(color="Period")+
+  grids(linetype = "dashed")
+ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/nitrite_nitrate/nitrite_max_anova_regime_",strata_name,".png"),
+       width=600,height=500,units="px",dpi=120)
 
 #################### GOM BASIN
 strata_index = gom_basin

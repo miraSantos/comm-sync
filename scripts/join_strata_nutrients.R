@@ -22,12 +22,15 @@ nes_shp<- read_sf(nes_url)
 
 ggplot() + geom_sf(data=EcoMon_Strata)+
   geom_text(data=EcoMon_Strata,aes(label = STRATA, x = X, y = Y))
-ggsave(paste0(basepath,"/figures/ecomon_strata_guide.png"),width=800,height=800,units="px",dpi=120)
+ggsave(paste0(basepath,"/figures/ecomon_strata_maps/ecomon_strata_guide.png"),width=1200,height=1200,units="px",dpi=200)
 
 ggplot() + geom_sf(data=EcoMon_Strata)+
 geom_sf(data=EcoMon_Strata[which(EcoMon_Strata$STRATA%in%strata_index),],color="red")+
 geom_text(data=EcoMon_Strata,aes(label = STRATA, x = X, y = Y))+
-geom_text(data=EcoMon_Strata[which(EcoMon_Strata$STRATA%in%strata_index),],aes(label = STRATA, x = X, y = Y),color="red")
+geom_text(data=EcoMon_Strata[which(EcoMon_Strata$STRATA%in%strata_index),],
+          aes(label = STRATA, x = X, y = Y),color="red")+
+  xlab("Longitude") + ylab("Latitude")
+
 ggsave(paste0(basepath,"/figures/ecomon_strata_mvco.png"),width=800,height=800,units="px",dpi=120)
 
 

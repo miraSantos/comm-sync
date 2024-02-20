@@ -7,6 +7,13 @@ lapply(list.of.packages, require, character.only = TRUE)
 remotes::install_github("NEFSC/NEFSC-Spatial")
 library(NEFSCspatial)
 
+ggplot() + geom_sf(data=EcoMon_Strata)+
+  geom_sf(data=EcoMon_Strata[which(EcoMon_Strata$STRATA%in%strata_index),],color="red")+
+  geom_text(data=EcoMon_Strata,aes(label = STRATA, x = X, y = Y))+
+  geom_text(data=EcoMon_Strata[which(EcoMon_Strata$STRATA%in%strata_index),],aes(label = STRATA, x = X, y = Y),color="red")
+ggsave(paste0(basepath,"/figures/ecomon_strata_mvco.png"),width=800,height=800,units="px",dpi=120)
+
+
 load(paste0(basepath,"/data/ecomon_nutrients_2007_2023.RData"))
 load(paste0(basepath,"/data/strata_nutrients.RData"))
 
