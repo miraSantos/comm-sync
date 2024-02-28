@@ -1,6 +1,7 @@
 #PURPOSE:
 list.of.packages <- c("readxl","fields","ggplot2","sf","broom","dplyr","lubridate","sp",
-                      "tidyr","scales","formula.tools","ggpubr","DescTools","gsw","grDevices")
+                      "tidyr","scales","formula.tools","ggpubr","DescTools","gsw","grDevices",
+                      "ragg")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
@@ -20,24 +21,42 @@ mvco_nearshore_lon = c(-73,-69)
 mvco_nearshore_lat = c(40,42)
 
 gom_basin = c(41,42,37,34)
+gom_basin_lon = c(-73,-69)
+gom_basin_lat = c(40,43)
+
 mvco_offshore = c(19,23)
+mvco_offshore_lon =c(-72,-68)
+mvco_offshore_lat = c(39.8,41.5)
+
 northeast_channel = c(38,39)
+
 gom_nearshore= c(36)
-
-
 gom_nearshore_lon = c(-71,-69)
 gom_nearshore_lat = c(41,43)
 
+
+#######################################
+
+#######################################
+### OPTIONS TO COMMENT IN AND OUT
 # strata_index = mvco_strata
 # strata_name="mvco_nearshore"
-# strata_index = mvco_offshore
-# strata_name = "MVCO_offshore"
+# lon = mvco_nearshore_lon
+# lat = mvco_nearshore_lat
+
+# strata_index = gom_nearshore
+# strata_name = "GOM_nearshore"
+# lon = gom_nearshore_lon
+# lat = gom_nearshore_lat
+
+strata_index = mvco_offshore
+strata_name = "MVCO_offshore"
+lon = mvco_offshore_lon
+lat = mvco_offshore_lat
+
 # strata_index = gom_basin
 # strata_name = "GOM_BASIN"
-strata_index = gom_nearshore
-strata_name = "GOM_nearshore"
-lon = gom_nearshore_lon
-lat = gom_nearshore_lat
+
 # regime_name = "2006 - 2011"
 # regime_name = "2012 - 2017"
 # regime_name = "2018 - 2022"
@@ -71,8 +90,8 @@ df_temp %>%
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   xlab("Longitude") + ylab("Latitude")
 
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/nitrite_nitrate/nitrate_maps/nitrite_deep_mean_map_regime_",strata_name,".png"),
-       width=1200,height=400,units="px",dpi=140)
+ggsave(paste0(basepath,"/figures/environmental/nutrients/nitrite_nitrate/nitrate_maps/nitrite_deep_mean_map_regime_",strata_name,".png"),
+       width=1200,height=929,units="px",dpi=120)
 
 #map of nutrient max
 df_temp %>%
@@ -90,4 +109,7 @@ df_temp %>%
   xlab("Longitude") + ylab("Latitude")
 
 ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/nitrite_nitrate/nitrate_maps/nitrite_deep_max_map_regime_",strata_name,".png"),
-       width=1200,height=400,units="px",dpi=140)
+       width=1200,height=400,units="px",dpi=100)
+
+
+#######################

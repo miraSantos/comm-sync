@@ -1,7 +1,10 @@
 
 #PURPOSE:
-list.of.packages <- c("readxl","fields","ggplot2","sf","broom","dplyr","lubridate","sp","tidyr","scales","formula.tools","ggpubr","DescTools","gsw")
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+list.of.packages <- c("readxl","fields","ggplot2","sf","broom","dplyr",
+                      "lubridate","sp","tidyr","scales","formula.tools",
+                      "ggpubr","DescTools","gsw")
+new.packages <- list.of.packages[!(list.of.packages %in%
+                                     installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
@@ -17,14 +20,40 @@ mvco_offshore = c(19,23)
 northeast_channel = c(38,39)
 gom_nearshore= c(36)
 
-# strata_index = mvco_strata
-# strata_name="mvco_nearshore"
+strata_index = mvco_strata
+strata_name="mvco_nearshore"
+
+# strata_index = gom_basin
+# strata_name = "GoM_BASIN"
 
 # strata_index = mvco_offshore
 # strata_name = "MVCO_offshore"
 
-strata_index = gom_nearshore
-strata_name = "GoM Nearshore"
+# strata_index = gom_nearshore
+# strata_name = "GoM Nearshore"
+
+df_gom <-read.csv("/home/mira/MIT-WHOI/Week.2024.02.18-24/characteristic_gom_water.csv",header =T)
+###########################################################
+#generate TS PLOTS with YEAR as COLOR
+dfj %>%
+  filter(season=="Summer",
+         temp!=-999,
+         salinity!=-999,
+         STRATA %in% strata_index,
+         depth_sampling > 10,
+         year>=2006)%>%
+  ggplot()+
+  geom_point(aes(x=salinity,
+                 y=temp,
+                 color=as.factor(year),shape=as.factor(year)),alpha=0.7)+
+  geom_point(data = df_gom,aes(x=salinity,y=temperature))+
+  geom_text(data=df_gom,aes(x=salinity, y =temperature, label = Name),hjust = 1.2,vjust =1)+
+  scale_shape_manual(values=1:20) +
+  xlab("Salinity (psu)") + 
+  ylab(expression("Temperature ("*degree* "C)"))
+
+df_gom %>%  ggplot(aes(x=salinity,y=temperature,label=Name)) + geom_point()+
+  geom_text(hjust = 0, nudge_x = 0.05)
 
 #########################################
 #generate data frame with column for strata_group i.e. column where each row is labeled with mvco_strat GOM_basin etc.
@@ -55,6 +84,7 @@ dfj %>% mutate(lat=signif(lat,4),
                depth_sampling_binned=cut(depth_sampling,breaks= seq(0,200,25),
                                          include.lowest=T))%>%
   filter(season=="Summer",
+         
          STRATA %in% strata_index,
          temp!=-999,salinity!=-999,
          regime!=NaN,!is.na(depth_sampling))%>% 
@@ -81,10 +111,28 @@ dfj_strata %>% mutate(lat=signif(lat,4),lon=signif(lon,4),
   xlab("Salinity (psu)") + ylab("Temperature (Deg C)")+
   xlim(30,35)+ylim(5,20)+
   scale_color_discrete(name="Strata Group",labels=c("GoM basin","GoM nearshore","MVCO Offshore","MVCO Nearshore"))+
-  scale_shape_manual(values=c(1,2,3,4),name="Strata Group",labels=c("GoM basin","GoM nearshore","MVCO Offshore","MVCO Nearshore"))
-
-
-
+  scale_shape_manual(values=c(1,2,3,4),name="Strata Group",labels=c("GoM basin","GoM nearshore","MVCO Offshore","MVCO Nearshore")
+  
+                     
+#generate TS PLOTS OVER PERIOD and DEPTH FACETS
+dfj_strata %>% mutate(lat=signif(lat,4),lon=signif(lon,4),
+               depth_sampling_binned= cut(depth_sampling,breaks= seq(0,50,10),include.lowest=T)) %>%
+  filter(season=="Summer",
+         temp!=-999,salinity!=-999,
+        strata_group != NaN,
+        depth_sampling_binned!="NA",
+         regime!=NaN)%>%
+  group_by(date,lat,lon)%>%
+  ggplot() + 
+  geom_point(aes(x=salinity,y=temp,color=strata_group,shape=strata_group),alpha=0.7)+
+  facet_grid(cols = vars(regime),rows=vars(depth_sampling_binned))+
+  xlab("Salinity (psu)") + ylab("Temperature (Deg C)")+
+  xlim(30,35)+ylim(5,20)+
+  scale_color_discrete(name="Strata Group",labels=c("GoM basin","GoM nearshore","MVCO Offshore","MVCO Nearshore"))+
+  scale_shape_manual(values=c(1,2,3,4),name="Strata Group",labels=c("GoM basin","GoM nearshore","MVCO Offshore","MVCO Nearshore")
+  
+                    
+                    
 #############################################################
 
 #plot boxplot of salinity by depth and period

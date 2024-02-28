@@ -91,6 +91,21 @@ ggsave(filename=paste0(basepath,
                        strata_name,".png"),
        width=1000,height=600,units="px",dpi=120)
 
+#plot summer temperature profiles over the three periods
+dfj %>% filter(season=="Summer",STRATA %in% strata_index,
+               nitrite_nitrate_flag==2,nitrite_nitrate != -999,temp != -999,
+               regime!=NaN) %>%
+  mutate(lat=signif(lat,4),lon=signif(lon,4)) %>%
+  group_by(date,lat,lon)%>%
+  mutate(profile_id = cur_group_id()) %>%
+  ggplot() + geom_line(aes(y=temp,x=depth_sampling,color=as.factor(profile_id))) + 
+  geom_point(aes(y=temp,x=depth_sampling,color=as.factor(profile_id))) + 
+  scale_x_reverse()+coord_flip()+
+  facet_grid(cols=vars(as.factor(year)))+
+  scale_colour_discrete(name = "Profile ID")+
+  xlab("Depth (m)") + ylab(expression("Temperature ("*degree*"C)"))+
+  guides(color = FALSE, size = FALSE)
+
 #plot summer salinity profiles over the three periods
 dfj %>% filter(season=="Summer",STRATA %in% strata_index,
                nitrite_nitrate_flag==2,salinity != -999,
@@ -152,3 +167,26 @@ ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/phosphate/phos
        width=1000,height=600,units="px",dpi=120)
 
 ########################################################
+
+
+#plot summer temperature profiles over the three periods
+dfj %>% filter(season=="Summer",STRATA %in% strata_index,
+               nitrite_nitrate_flag==2,nitrite_nitrate != -999,temp != -999,
+               regime!=NaN) %>%
+  mutate(lat=signif(lat,4),lon=signif(lon,4)) %>%
+  group_by(date,lat,lon)%>%
+  mutate(profile_id = cur_group_id()) %>%
+  ggplot() + geom_line(aes(y=salinity,x=depth_sampling,color=as.factor(profile_id))) + 
+  geom_point(aes(y=salinity,x=depth_sampling,color=as.factor(profile_id))) + 
+  scale_x_reverse()+coord_flip()+
+  facet_grid(cols=vars(as.factor(year)))+
+  scale_colour_discrete(name = "Profile ID")+
+  xlab("Depth (m)") + ylab("Salinity (psu)")+
+  guides(color = FALSE, size = FALSE)
+
+
+dfj %>% filter(season=="Summer",STRATA %in% strata_index,
+               nitrite_nitrate_flag==2,nitrite_nitrate != -999,temp != -999,salinity!=-999,
+               regime!=NaN) %>%
+  ggplot() +
+  geom_point(aes(x = salinity, y = temp, color=as.factor(year)))

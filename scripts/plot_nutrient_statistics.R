@@ -20,14 +20,14 @@ mvco_offshore = c(19,23)
 northeast_channel = c(38,39)
 gom_nearshore= c(36)
 
-# strata_index = mvco_strata
-# strata_name="mvco_nearshore"
+strata_index = mvco_strata
+strata_name="mvco_nearshore"
 # strata_index = mvco_offshore
 # strata_name = "MVCO_offshore"
 # strata_index = gom_basin
 # strata_name = "GOM_BASIN"
-strata_index = gom_nearshore
-strata_name = "GOM_nearshore"
+# strata_index = gom_nearshore
+# strata_name = "GOM_nearshore"
 regime_name = "2006 - 2011"
 # regime_name = "2012 - 2017"
 # regime_name = "2018 - 2022"
@@ -39,6 +39,7 @@ temp <- dfj %>% filter(season=="Summer",STRATA %in% strata_index,
   mutate(lat=signif(lat,4),lon=signif(lon,4)) %>%
   group_by(date,lat,lon)%>%
   mutate(profile_id = cur_group_id())
+
 
 ######################
 #STATISTICS
