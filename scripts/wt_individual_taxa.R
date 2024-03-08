@@ -1,3 +1,4 @@
+#PURPOSE: GENERATE WAVELET R DATA OBJECTS AND GENERATE WAVELET SPECTRA
 list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
                       "fields","ggplot2","tibbletime","dplyr","sets",
                       "reshape2","ggformula","tidyr","moments")
@@ -7,29 +8,8 @@ lapply(list.of.packages, require, character.only = TRUE)
 source("/dos/MIT-WHOI/Week.2023.04.24-30/adv_biwavelet_packages.R")
 rm(wt) #replaces wt with the correct biwavelet version (there are 2 versions)
 
-
-#LOADING IN DATA FRAME
-data.path <- "/home/mira/MIT-WHOI/data/2023/MVCO_syn_euk_conc_2023_Mar.csv"
-df.syn <- read.csv(data.path)
-head(df.syn)
-
-df.syn$date=as.Date(df.syn$Time_UTC,format="%d-%b-%Y %H:%M:%S")
-df.syn$doy_numeric=yday(df.syn$date)
-df.syn = na.omit(df.syn)
-cols = c("sum_euk_biovol_perml","sum_syn_biovol_perml")
-
-#NAIVE GAP FILLING
-df.syn_freq <- df.syn %>% 
-  group_by(date) %>%
-  summarize(across(cols,mean)) %>%
-  #set to daily frequency
-  complete(date = seq.Date(min(df.syn$date),max(df.syn$date), by="day")) %>%
-  #fill out doy_numeric
-  mutate(doy_numeric = yday(date)) %>%
-  group_by(doy_numeric)%>%
-  #replace nans for living things with yearly mean
-  mutate(across(cols,~replace_na(.,mean(.,na.rm=T))))
-
+#LOADING IFCB FILES
+load("/home/mira/MIT-WHOI/github_repos/comm-sync/data/r_objects/filled/2023_Jul_26_dfcarbon_group.RData")
 plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALSE){
   x = res
   ncol = 64
@@ -188,17 +168,7 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
   axis(2, at = axis.locs, labels = yticklab,las=1)
   
   
-  # COI
-  if (plot.coi) {
-    # polygon(x = c(x$t, rev(x$t)), lty = lty.coi, lwd = lwd.coi,
-    #         y = c(log2(x$coi),
-    #               rep(max(log2(x$coi), na.rm = TRUE), length(x$coi))),
-    #         col = adjustcolor(col.coi, alpha.f = alpha.coi), border = col.coi)
-    polygon(x = c(x$t, rev(x$t)), lty = lty.coi, lwd = lwd.coi,
-            y = c(log2(x$coi), rep(max(c(log2(x$coi), x$period), na.rm = TRUE),
-                                   length(x$coi))),
-            col = adjustcolor(col.coi, alpha.f = alpha.coi), border = col.coi)
-  }
+
   
   # sig.level contour
   if (plot.sig & length(x$signif) > 1) {
@@ -240,26 +210,55 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
                arrow.lwd = arrow.lwd,
                arrow.col = arrow.col)
   }
+  
+  # COI
+  if (plot.coi) {
+    # polygon(x = c(x$t, rev(x$t)), lty = lty.coi, lwd = lwd.coi,
+    #         y = c(log2(x$coi),
+    #               rep(max(log2(x$coi), na.rm = TRUE), length(x$coi))),
+    #         col = adjustcolor(col.coi, alpha.f = alpha.coi), border = col.coi)
+    polygon(x = c(x$t, rev(x$t)), lty = lty.coi, lwd = lwd.coi,
+            y = c(log2(x$coi), rep(max(c(log2(x$coi), x$period), na.rm = TRUE),
+                                   length(x$coi))),
+            col = adjustcolor(col.coi, alpha.f = alpha.coi), border = col.coi)
+  }
   dev.off()
 }
 
-time_index = seq(1,nrow(df.syn_freq),1)
-dat = as.matrix(cbind(time_index,df.syn_freq$sum_syn_biovol_perml))
-res = wt_arc(dat)
+species_list_files = list.files("/home/mira/MIT-WHOI/github_repos/comm-sync/figures/all_index/")
+species_list= substr(species_list_files,1,nchar(species_list_files)-7)
+species_list_i= intersect(names(dfcarbon_class),species_list)
+
+dfcarbon_class_filled <- dfcarbon_class %>% 
+  group_by(date) %>%
+  summarize(across(species_list_i,mean)) %>%
+  #set to daily frequency
+  complete(date = seq.Date(min(dfcarbon_class$date),max(dfcarbon_class$date), by="day")) %>%
+  #fill out doy_numeric
+  mutate(doy_numeric = yday(date)) %>%
+  group_by(doy_numeric)%>%
+  #replace nans for living things with yearly mean
+  mutate(across(species_list_i,~replace_na(.,mean(.,na.rm=T))))
 
 
-#SYN
-plot_single_wt_arc(df.syn_freq,res,
-                   title="Wavelet Transform of Synechecoccus from 2006-2021",
-                   save_folder="/home/mira/MIT-WHOI/community_synchrony/figures/",
-                   save_name="Syn_wt.png")
+super_res <-list()
 
-#EUKS
-dat = as.matrix(cbind(time_index,df.syn_freq$sum_euk_biovol_perml))
-res = wt_arc(dat)
+for(i in 1:length(species_list_i)){
+print(paste(i,"of",length(species_list_i)))
+time_index = seq(1,nrow(dfcarbon_class_filled),1)
+dat = as.matrix(cbind(time_index,dfcarbon_class_filled[species_list_i[i]]^(1/3)))
+res= wt_arc(dat)
+super_res[[i]]<-res
+}
 
-plot_single_wt_arc(res,
-                   title="Wavelet Transform of Picoeuks from 2006-2021",
-                   save_folder="/dos/MIT-WHOI/community_sychrony/figures/",
-                   save_name="euk_wt.png")
+head(super_res)
+save(super_res,species_list_i,file=paste0(basepath,"/data/r_objects/wavelet_output_species_2024_Mar_08.RData"))
+
+plot_single_wt_arc(df=dfcarbon_class_filled,super_res[[1]],title=paste0("Wavelet Transform of ",species_list_i[1]),
+                   save_folder = "/home/mira/MIT-WHOI/github_repos/comm-sync/figures/wavelet_transforms/single wt/",
+                   save_name=paste0("wt_transform_",species_list[1],".png"),plot.phase=TRUE)
+
+plot(dfcarbon_class_filled[[species_list_i[1]]])
+
+plot(dfcarbon_class_filled$Acanthoica_quattrospina)
 

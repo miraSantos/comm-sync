@@ -4,13 +4,13 @@ list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
-source("/dos/MIT-WHOI/Week.2023.04.24-30/adv_biwavelet_packages.R")
+source("/home/mira/MIT-WHOI/Week.2023.04.24-30/adv_biwavelet_packages.R")
 rm(wt)
 
 #######################################################
 #purpose: compute wavelet transform of species
 group_index = all_index
-save_path = "/dos/MIT-WHOI/Week.2023.05.15-21/"
+save_path = "/home/mira/MIT-WHOI/Week.2023.05.15-21/"
 group_name="all_index"
 
 list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
@@ -19,7 +19,7 @@ list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
-source("/dos/MIT-WHOI/Week.2023.04.24-30/adv_biwavelet_packages.R")
+source("/home/mira/MIT-WHOI/Week.2023.04.24-30/adv_biwavelet_packages.R")
 rm(wt)
 
 url = "https://raw.githubusercontent.com/miraSantos/gp_plankton_model/master/data/biovol_concentration_by_class_time_series_CNN_daily10Jan2022.csv"

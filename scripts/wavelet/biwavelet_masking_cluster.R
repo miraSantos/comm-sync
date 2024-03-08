@@ -5,11 +5,11 @@ list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages,repos='http://cran.us.r-project.org')
 lapply(list.of.packages, require, character.only = TRUE)
-source("/dos/MIT-WHOI/community_sychrony/scripts/adv_biwavelet_packages.R")
+source("/home/mira/MIT-WHOI/github_repos/comm-sync/scripts/wavelet/adv_biwavelet_packages.R")
 rm(wt)
 rm(wclust)
 
-load("/home/mira/MIT-WHOI/community_sychrony/data/r_objects/2023_Jul_10_dfcarbon_group.RData")
+load("/home/mira/MIT-WHOI/community_synchrony/data/r_objects/filled/2023_Jul_26_dfcarbon_group.RData")
 
 nrows = 79
 ncols = 5677

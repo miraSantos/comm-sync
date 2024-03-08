@@ -7,7 +7,7 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 #loading packages
 lapply(list.of.packages, require, character.only = TRUE)
-source("/dos/MIT-WHOI/community_sychrony/scripts/adv_biwavelet_packages.R")
+source("/home/mira/MIT-WHOI/community_sychrony/scripts/adv_biwavelet_packages.R")
 rm(wt) #replaces wt with the correct biwavelet version (there are 2 versions)
 
 #GOAL: make synthetic data to explore clustering results.

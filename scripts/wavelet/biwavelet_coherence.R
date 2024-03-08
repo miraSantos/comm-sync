@@ -11,7 +11,7 @@ rm(wt)
 
 ############################################
 #computing coherence on MVCO carbon concentration 
-load("/dos/MIT-WHOI/community_sychrony/data/r_objects/2023_Jul_03_comm_sync_df_index.RData")
+load("/home/mira/MIT-WHOI/community_sychrony/data/r_objects/2023_Jul_26_comm_sync_df_index.RData")
 i = 3
 time_index = seq(1,nrow(dfcarbon_conc),1)
 temp_raw = scale(dfcarbon_conc["temp_beam"])

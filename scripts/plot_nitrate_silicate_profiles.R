@@ -1,6 +1,6 @@
 #PURPOSE:plot silicate and nitrate profie
 list.of.packages <- c("readxl","fields","ggplot2","sf","broom","dplyr","lubridate","sp",
-                      "tidyr","scales","formula.tools","ggpubr","DescTools","gsw","grDevices")
+                      "tidyr","scales","formula.tools","ggpubr","DescTools","gsw","grDevices","ggpubr")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
@@ -22,11 +22,11 @@ gom_nearshore= c(36)
 
 
 #UNCOMMENT DESIRED OPTIONS
-strata_index = mvco_strata
-strata_name="mvco_nearshore"
-
-# strata_index = mvco_offshore
-# strata_name = "MVCO_offshore"
+# strata_index = mvco_strata
+# strata_name="mvco_nearshore"
+# 
+strata_index = mvco_offshore
+strata_name = "MVCO_offshore"
 
 # strata_index = gom_basin
 # strata_name = "GOM_BASIN"
@@ -39,7 +39,7 @@ strata_name="mvco_nearshore"
 # regime_name = "2018 - 2022"
 
 #df_profiles create dataframe and add profiles column 
-df_profiles <- dfj %>% filter(season=="Summer",STRATA %in% strata_index,
+df_profiles <- dfj %>% filter((season=="Spring" | season == "Winter"),STRATA %in% strata_index,
                        nitrite_nitrate_flag==2,nitrite_nitrate!=-999,
                        silicate_flag ==2, silicate!=-999,
                        regime != NaN) %>%
@@ -92,17 +92,18 @@ df_profiles %>% filter(profile_id == 8 ) %>%
 
 
 ############## GENERATE STATISTICS
- df_temp <- temp %>% group_by(profile_id) %>% mutate(nut_max = max(silicate-nitrite_nitrate))  %>%
-  filter(depth_sampling >= 20,depth_sampling <= 40,silicate - nitrite_nitrate >=0.1) %>%
+ df_temp <- df_profiles %>% group_by(profile_id) %>% mutate(nut_max = max(silicate-nitrite_nitrate))  %>%
+  filter(depth_sampling >= 20,silicate - nitrite_nitrate >=0.1) %>%
   mutate(nit_sum_deep =mean(silicate-nitrite_nitrate,na.rm=T))
 
+ #NIT MAX
 ggboxplot(data=df_temp,x="regime",y="nut_max",color="regime")+
   stat_compare_means(method="anova",label.y=max(df_temp$nut_max)+1)+
   xlab("Period") + ylab(expression("[Silicate] - [Nitrite+Nitrate] ("*mu*"mol kg"^-1*")"))+
   stat_compare_means(label = "p.signif", method = "t.test",
                      ref.group = ".all.")+ labs(color="Period")+
   grids(linetype = "dashed")
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/silicate-nitrite_max_anova_regime_",strata_name,".png"),
+ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/silicate-nitrate/silicate-nitrite_max_anova_regime_",strata_name,".png"),
        width=600,height=500,units="px",dpi=120)
 
 # Statistical comparison of nit deep mean
@@ -113,6 +114,6 @@ ggboxplot(data=df_temp,x="regime",y="nit_sum_deep",color="regime")+
                      ref.group = ".all.")+ labs(color="Period")+
   grids(linetype = "dashed")
  
-ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/silicate-nitrite_deep_mean_anova_regime_",strata_name,".png"),
+ggsave(filename=paste0(basepath,"/figures/environmental/nutrients/silicate-nitrate/silicate-nitrite_deep_mean_anova_regime_",strata_name,".png"),
        width=600,height=500,units="px",dpi=120)
 

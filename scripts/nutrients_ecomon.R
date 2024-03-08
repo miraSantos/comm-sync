@@ -471,6 +471,8 @@ df_nut <- list(dft,df_nut_2007,df_nut_2009,df_nut_2012,df_nut_2013,df_nut_2014,
            "nitrite_nitrate","phosphate","silicate",
            "nitrite_nitrate_flag","phosphate_flag","silicate_flag","ctd_pressure"))
 
+df_nut <- bind_rows(df_nut,df_osd)
+df_nut <- bind_rows(df_nut,df_ctd)
 
 df_nut$year <- year(df_nut$date)
 metseasons <- c(
