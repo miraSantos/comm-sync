@@ -1,11 +1,11 @@
 #PURPOSE: GENERATE WAVELET R DATA OBJECTS AND GENERATE WAVELET SPECTRA
 list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
                       "fields","ggplot2","tibbletime","dplyr","sets",
-                      "reshape2","ggformula","tidyr","moments")
+                      "reshape2","ggformula","tidyr","moments","grDevices")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
-source("/dos/MIT-WHOI/Week.2023.04.24-30/adv_biwavelet_packages.R")
+source("/home/miras/MIT-WHOI/Week.2023.04.24-30/adv_biwavelet_packages.R")
 rm(wt) #replaces wt with the correct biwavelet version (there are 2 versions)
 
 #LOADING IFCB FILES
@@ -254,11 +254,19 @@ super_res[[i]]<-res
 head(super_res)
 save(super_res,species_list_i,file=paste0(basepath,"/data/r_objects/wavelet_output_species_2024_Mar_08.RData"))
 
+
+load(paste0(basepath,"/data/r_objects/wavelet_output_species_2024_Mar_08.RData"))
 plot_single_wt_arc(df=dfcarbon_class_filled,super_res[[1]],title=paste0("Wavelet Transform of ",species_list_i[1]),
                    save_folder = "/home/mira/MIT-WHOI/github_repos/comm-sync/figures/wavelet_transforms/single wt/",
                    save_name=paste0("wt_transform_",species_list[1],".png"),plot.phase=TRUE)
 
 plot(dfcarbon_class_filled[[species_list_i[1]]])
 
-plot(dfcarbon_class_filled$Acanthoica_quattrospina)
+
+super_res[[2]]$power
+
+contour(x$t, yvals, t(x$signif), level = tol, col = col.sig,
+        lwd = lwd.sig, add = TRUE, drawlabels = FALSE)
+
+contourLines(x$t, yvals, t(x$signif), level = tol)
 
