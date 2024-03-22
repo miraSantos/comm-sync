@@ -840,6 +840,10 @@ plot.biwavelet_adv <- function(x, ncol = 64, fill.cols = NULL,
     if (x$type %in% c("wt", "xwt")) {
       contour(x$t, yvals, t(x$signif), level = tol, col = col.sig,
               lwd = lwd.sig, add = TRUE, drawlabels = FALSE)
+      contour(x$t, yvals, t(x$signif), level = 2, col = "red",lty ="dashed",
+              lwd = lwd.sig, add = TRUE, drawlabels = FALSE)
+      contour(x$t, yvals, t(x$signif), level = 3, col = "green",lty="dashed",
+              lwd = lwd.sig, add = TRUE, drawlabels = FALSE)
     } else {
       tmp <- x$signif
       
@@ -950,6 +954,7 @@ wt_arc <- function(d, pad = TRUE, dj = 1 / 12,
                 sig.test = 0,asig.level = 0.95,do.sig = TRUE,anrands = 100) {
 
    mother <- match.arg(tolower(mother), MOTHERS)
+   
 
   # Check data format
   checked <- check.datum(d)
@@ -969,7 +974,7 @@ wt_arc <- function(d, pad = TRUE, dj = 1 / 12,
 
   if (is.null(lag1)) {
     # Get AR(1) coefficients for each time series
-    d.ar1 <- arima(d[,2], order = c(1, 0, 0))$coef[1]
+    d.ar1 <- arima(d[,2], order = c(1, 0, 0),method="ML")$coef[1]
     lag1 <- c(d.ar1)
   }
  
