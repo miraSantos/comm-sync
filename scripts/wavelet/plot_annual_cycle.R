@@ -59,6 +59,21 @@ df_carbonC  %>%
   ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_cycle/","annual_cycle_",ii,".png"),
          width=800,height=600,units="px",dpi=100)}
 
+
+
+#generate plots for week of year
+for (i in full_periodicity_list){
+  print(i)
+  ggplot(data = week_means)+geom_line(aes_string(x ="week",y =i))+
+    scale_x_continuous(breaks=seq(1,52,3),limits=c(0,53))
+  ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_cycle/","week_annual_cycle_",i,".png"),width=800,height=800,units="px",dpi=100)
+}
+head(doy_means)
+
+
+####################
+#plot individual
+#################
 ii = "Acantharia"
 df_carbonC  %>%
   mutate_at(protist_tricho_labelC,quadroot) %>%
@@ -67,5 +82,3 @@ df_carbonC  %>%
   geom_boxplot(aes_string(x="week",y=ii))
 
 plot(df_carbonC$date,df_carbonC$detritus^(1/4))
-
-
