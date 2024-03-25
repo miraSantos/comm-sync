@@ -9,13 +9,12 @@ lapply(list.of.packages, require, character.only = TRUE)
 ################################################################################
 ################################################################################
 #COMPUTE CONTOUR LINES FOR ANNUAL PERIOD
-load(paste0(basepath,"/data/r_objects/wavelet_output_species_2024_Mar_15.RData"))
+basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
+load(paste0(basepath,"/data/r_objects/wavelet_output_species_2024_Mar_22_morlet.RData"))
+
 
 #store dimensions of annual contours
-annual_dims <- list()
 annual_lengths <- vector(length=length(super_res))
-
-
 annual_dims = data.frame(species=character(),xmin=numeric(),xmax=numeric())
 Colnames <- names(annual_dims)
 
@@ -31,8 +30,11 @@ for(wavelet in 1:length(super_res)){
   # extract contours at annual band
   annual_contours <- list()
   annual_contours_length <- vector(length=length(contour_pos))
+  #annual band
+  period_min = log2(100) #300 days
+  period_max = log2(500) #
   for(ii in 1:length(contour_pos)){
-    annual_contours[[ii]] <- which((contour_pos[[ii]]$y > 8) & (contour_pos[[ii]]$y < 9))
+    annual_contours[[ii]] <- which((contour_pos[[ii]]$y > period_min) & (contour_pos[[ii]]$y < period_max))
     annual_contours_length[ii] <- length(annual_contours[[ii]])
   }
 
@@ -63,15 +65,15 @@ for(wavelet in 1:length(super_res)){
   annual_lengths[wavelet] <-wavelet_annual_length_sum
 }
 
-annual_dims <- annual_dims %>% mutate(xmin=as.numeric(xmin),xmax=as.numeric(xmax),func_group = NA,range=xmax-xmin)
+annual_dims <- annual_dims %>% mutate(xmin=as.numeric(xmin),xmax=as.numeric(xmax),func_group = "Unknown")
 #store annual durations in dataframe with species and functional group labels
 df_annual = data.frame(annual_duration = annual_lengths,species=protist_tricho_labelC,func_group = "Unknown")
 
-head(df_annual)
+annual_dims <- left_join(annual_dims,df_annual,by=c("species","func_group"))
 
-#load ifcb class list file that categories each species in a functional gorup
-func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan")   
-func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nanoflagcocco_label,metazoan_label)
+#load ifcb class list file that categories each species in a functional group
+func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Unknown")
+func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nanoflagcocco_label,metazoan_label,c("Unknown"))
 #create column with functional group for df annual
 for(func_group in 1:length(func_group_list)){
 reference=func_group_labels[[func_group]]
@@ -80,8 +82,9 @@ annual_dims[annual_dims$species%in%reference,"func_group"] = func_group_list[fun
 }
 
 
+full_periodicity_list <- df_annual$species[which(df_annual$annual_duration==5109)]
 ################################################################################
-#
+#bar chart
 ################################################################################
 df_annual %>%group_by(func_group) %>%
   summarise(ad_sum = sum(annual_duration),n=n()) %>% 
@@ -91,35 +94,20 @@ df_annual %>%group_by(func_group) %>%
   ylab("Days with Annual Periodicity")
 
 
-my_colors <- RColorBrewer::brewer.pal(5, "Set1")
+####################################################################################
+#complete bar plot 
+####################################################################################
+#generating color codes
+my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
 map <- data.frame(func_group=func_group_list,colors=my_colors)
-color_code = left_join(df_annual[order(df_annual$annual_duration,df_annual$func_group),], map,by="func_group")$colors
+color_code = left_join(df_annual[order(df_annual$annual_duration,df_annual$func_group),],map,by="func_group")$colors
 map_dict <- map$colors
 names(map_dict) <- map$func_group
 
 df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>% 
-  filter(annual_duration > 800) %>%
-  mutate(species=factor(species,levels=species)) %>% 
-  ggplot() +
-  geom_bar(aes(x=species,y=annual_duration,fill=func_group),
-           stat="identity",color="white")+
-  coord_flip()+
-  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
-  ylab("Years with Annual Periodicity")+
-  xlab("Species")+
-  scale_y_continuous(breaks=seq(0,365*14,365*2),
-                     labels=seq(0,14,2),limits=c(0,365*14))
-
-ggsave(filename=paste0(basepath,"figures/annual_periodicity_bar.png"),
-       width=1600,height=1600,units="px",dpi=200)
-
-
-####################################################################################
-
-df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>% 
   mutate(species=factor(species,levels=species)) %>%
   ggplot() +
-    geom_bar(aes(x= species,y=annual_duration,fill=func_group),
+  geom_bar(aes(x= species,y=annual_duration,fill=func_group),
            stat="identity",color="white")+
   coord_flip()+
   scale_fill_manual(values=map_dict,name="Functional\nGroup")+
@@ -129,20 +117,52 @@ df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>%
                      labels=seq(0,14,2),limits=c(0,365*14))+
   theme(axis.text.y = element_text(colour = color_code))
 
-
 ggsave(filename=paste0(basepath,"figures/annual_periodicity_bar_all.png"),
-       width=1000,height=1300,units="px",dpi=100)
+       width=1500,height=3000,units="px",dpi=200)
 
+
+################################################################################
+# Bar plot only of complete taxa
+################################################################################
+
+my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
+map <- data.frame(func_group=func_group_list,colors=my_colors)
+color_code = left_join(df_annual[order(df_annual$annual_duration,df_annual$func_group),],map,by="func_group") %>% 
+  filter(annual_duration > 365*2) %>% select(colors)
+map_dict <- map$colors
+names(map_dict) <- map$func_group
+
+df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>% 
+  filter(annual_duration > 365*2) %>% 
+  mutate(species=factor(species,levels=species)) %>% 
+  ggplot() +
+  geom_bar(aes(x=species,y=annual_duration,fill=func_group),
+           stat="identity",color="white")+
+  coord_flip()+
+  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
+  ylab("Years with Annual Periodicity")+
+  xlab("Species")+
+  scale_y_continuous(breaks=seq(0,365*14,365*2),
+                     labels=seq(0,14,2),limits=c(0,365*14))+
+  theme(axis.text.y = element_text(colour = color_code$colors))
+
+ggsave(filename=paste0(basepath,"figures/annual_periodicity_bar.png"),
+       width=1600,height=1600,units="px",dpi=200)
+
+
+df_annual %>% filter(annual_duration <5109)
+annual_dims %>% filter(annual_duration <5109)
 ################################################################################
 #ANNUAL TIME RANGE PLOT
 ################################################################################
-annual_dims[order(annual_dims$range,annual_dims$func_group),] %>%
+annual_dims %>% 
+  filter(annual_duration<5109)%>%
   mutate(species=factor(species,levels=unique(species))) %>% 
   ggplot() +
-  geom_linerange(aes(x=reorder(species,+range),
+  geom_linerange(aes(x=species,
                      ymin=xmin,ymax=xmax,color=func_group),linewidth=1)+
   coord_flip() + 
-  ylab("Years") +
+  ylab("Year") +
   xlab("Species")+
   scale_color_manual(values=map_dict,name="Functional\nGroup") +
   scale_y_continuous(breaks=seq(0,365*14,365*2),
@@ -154,6 +174,8 @@ ggsave(filename=paste0(basepath,"figures/annual_periodicity_line_range.png"),
 #################################################################################
 #compute contour dimensions for an INDIVIDUAL WAVELET
 #################################################################################
+head(annual_dims)
+
 
 annual_dims = data.frame(species=character(),xmin=numeric(),xmax=numeric())
 Colnames <- names(annual_dims)

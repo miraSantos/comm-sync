@@ -14,10 +14,36 @@ source(paste0(basepath,"/scripts/wavelet/plot_wt_simulations.R"))
 #######################################################################################
 sim_x = seq(1,5000,1)
 period = 365
-sim_y = sin((2*pi/period)*sim_x) + 5
+noise = rnorm(length(sim_x),mean=0,sd=0.4)
+sim_y = sin((2*pi/period)*sim_x) + 5 + noise
 sim_y[c(599,600,601)] = 200
 
-plot(sim_x,sim_y,type="l")
+plot(sim_x,sim_y^(1/4),type="l")
+
+dat = as.matrix(cbind(sim_x,sim_y^(1/4)))
+res= wt_arc(dat,mother="paul")
+plot.biwavelet_adv(res,plot.cb = T)
+
+plot.wt.simulation(res,sim_x,sim_y,save_folder=paste0(basepath,"/figures/wavelet_transforms/simulations/"),
+                   save_name="simulation_spike_sin_paul.png")
+
+res= wt_arc(dat,mother="morlet")
+plot.biwavelet_adv(res,plot.cb = T)
+
+plot.wt.simulation(res,sim_x,sim_y,save_folder=paste0(basepath,"/figures/wavelet_transforms/simulations/"),
+                   save_name="simulation_spike_sin_morlet.png")
+
+
+#######################################################################################
+#SIMULATION SIN CURVE WITH 1 SPIKE
+#######################################################################################
+sim_x = seq(1,5000,1)
+period = 365
+noise = rnorm(length(sim_x),mean=0,sd=0.4)
+sim_y = sin((2*pi/period)*sim_x) + 5 + noise
+sim_y[c(599:604)] = 200
+
+plot(sim_x,sim_y^(1/4),type="l")
 
 dat = as.matrix(cbind(sim_x,sim_y^(1/4)))
 res= wt_arc(dat,mother="paul")

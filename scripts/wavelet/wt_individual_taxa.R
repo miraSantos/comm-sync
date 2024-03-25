@@ -6,6 +6,8 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 source(paste0(basepath,"/scripts/wavelet/adv_biwavelet_packages.R"))
+source(paste0(basepath,"/scripts/wavelet/plot_single_wt_arc.R"))
+
 rm(wt) #replaces wt with the correct biwavelet version (there are 2 versions)
 
 #read in files from read_in_mvco_ifcb_files.R
@@ -15,6 +17,8 @@ carbonC_list <- list.files(data_path)
 load(paste0(basepath,"data/r_objects/unfilled/2023_Mar_15_df_carbon.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2023_Mar_15_df_carbon_metadata.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2023_Mar_15_df_carbon_optthresh.RData"))
+
+optthresh_nan = names(df_carbon_optthresh)[which(df_carbon_optthresh == "NaN")]
 
 protist_tricho_label <- read.csv(paste0(data_path,carbonC_list[9]),header=F)$V1
 diatom_label <- read.csv(paste0(data_path,carbonC_list[3]),header=F)$V1
@@ -65,21 +69,12 @@ super_res <-list()
 for(i in 1:length(protist_tricho_labelC)){
 print(paste(i,"of",length(protist_tricho_labelC)))
 time_index = seq(1,nrow(df_carbonC_filled),1)
-dat = as.matrix(cbind(time_index,df_carbonC_filled[protist_tricho_labelC[i]]^(1/3)))
-res= wt_arc(dat,mother="paul")
+dat = as.matrix(cbind(time_index,df_carbonC_filled[protist_tricho_labelC[i]]^(1/4)))
+res= wt_arc(dat,mother="morlet")
 super_res[[i]]<-res
 }
 
-head(super_res)
-save(super_res,protist_tricho_labelC,file=paste0(basepath,"/data/r_objects/wavelet_output_species_2024_Mar_15.RData"))
-
-for (i in 1:length(protist_tricho_labelC)){
-  print(i)
-plot_single_wt_arc(df=df_carbonC_filled,super_res[[i]],title=paste0("Wavelet Transform of ",protist_tricho_labelC[i]),
-                   save_folder = "/home/mira/MIT-WHOI/github_repos/comm-sync/figures/wavelet_transforms/single wt/",
-                   save_name=paste0("wt_transform_",protist_tricho_labelC[i],".png"),plot.phase=TRUE)
-}
-
+#PLOT INDIVIDUAL
 load(paste0(basepath,"/data/r_objects/wavelet_output_species_2024_Mar_15.RData"))
 plot_single_wt_arc(df=df_carbonC_filled,super_res[[1]],title=paste0("Wavelet Transform of ",protist_tricho_labelC[1]),
                    save_folder = "/home/mira/MIT-WHOI/github_repos/comm-sync/figures/wavelet_transforms/single wt/",
