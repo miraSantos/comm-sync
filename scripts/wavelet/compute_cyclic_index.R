@@ -65,11 +65,49 @@ for(y in year){
   t=NA
 }
 
+
 c_index = colMeans(df_cor[full_periodicity_list])
 c_index = data.frame(c_index)
 c_index$species <- rownames(c_index)
-ggplot(data=c_index) + geom_bar(aes(x=reorder(species,+c_index),y=c_index),stat="identity")+
-  coord_flip()+ylim(0,1)
+
+ii = 9
+
+for(ii in 1:length(full_periodicity_list)){
+  print(paste0(ii," of ",length(full_periodicity_list)))
+ggplot(data=df_cor) + geom_line(aes_string(x="year",y=full_periodicity_list[ii]))+
+  scale_x_continuous(breaks=seq(2006,2023,2))+ylim(0,1)
+ggsave(filename(paste0(basepath,"")))
+}
+
+c_index$func_group = "Unknown"
+#load ifcb class list file that categories each species in a functional group
+func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Unknown")
+func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nanoflagcocco_label,metazoan_label,c("Unknown"))
+#create column with functional group for df annual
+for(func_group in 1:length(func_group_list)){
+  reference=func_group_labels[[func_group]]
+  c_index[c_index$species%in%reference,"func_group"] = func_group_list[func_group]
+}
+
+my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
+map <- data.frame(func_group=func_group_list,colors=my_colors)
+color_code = left_join(c_index[order(c_index$c_index,c_index$func_group),],map,by="func_group")$colors
+map_dict <- map$colors
+names(map_dict) <- map$func_group
+
+#plot c_index
+c_index %>% drop_na() %>%
+ggplot() + geom_bar(aes(x=reorder(species,+c_index),y=c_index,fill=func_group),
+                                stat="identity")+
+  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
+  coord_flip()+ylim(0,1)+
+  ylab("Cyclicity Index")+xlab("Species")+
+  theme(axis.text.y = element_text(colour = color_code))
+
+
+
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index.png"),
+       width=1500,height=3000,units="px",dpi=200)
 
 #plot individual interpolation
 y = 2023
