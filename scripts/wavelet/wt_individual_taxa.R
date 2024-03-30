@@ -63,6 +63,8 @@ df_carbonC_filled <- df_carbonC %>%
   mutate(across(protist_tricho_labelC,~replace_na(.,mean(.,na.rm=T)))) %>%
   select(all_of(c(protist_tricho_labelC,"date","doy_numeric")))
 
+save(protist_tricho_labelC,diatom_labelC,ciliate_label,dino_label,nanoflagcocco_label,metazoan_label,
+     file=paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
 
 super_res <-list()
 

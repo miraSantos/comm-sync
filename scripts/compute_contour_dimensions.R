@@ -83,6 +83,8 @@ annual_dims[annual_dims$species%in%reference,"func_group"] = func_group_list[fun
 
 
 full_periodicity_list <- df_annual$species[which(df_annual$annual_duration==5109)]
+
+save(df_annual,annual_dims,full_periodicity_list,file=)
 ################################################################################
 #bar chart
 ################################################################################
@@ -224,3 +226,6 @@ annual_lengths[wavelet] <-wavelet_annual_length
 
 plot.biwavelet_adv(super_res[[index]])
 annual_dims[annual_dims$species=="Guinardia_delicatula",]
+
+###############################################
+################################################

@@ -23,21 +23,6 @@ week_means <- df_carbonC_filled %>%
   group_by(week) %>%
   summarize_at(protist_tricho_labelC,mean,na.rm=T)
 
-df_spline <- df_carbonC_filled %>%
-  reframe(across(all_of(full_periodicity_list),~spline(doy_numeric,y = .x^(1/4),xout=seq(1,365,7))))
-values = list()
-for (col in full_periodicity_list){
-  values <- append(values,  df_spline[[col]]["y"])
-}
-df_spline <- data.frame(values)
-colnames(df_spline) <- full_periodicity_list
-
-df_spline <- df_carbonC_filled %>%
-  reframe(across(full_periodicity_list,  ~spline(doy_numeric, .x^(1/4), n = 15) %>%
-                     as_tibble %>% 
-                     rename_with(~ str_c(cur_column(), .)))) %>% 
-  unpack(everything())
-
 plot(df_spline$Acantharia)
 ##########################
 # using TSClust
@@ -53,14 +38,14 @@ head(series.norm)
 clust.part <- tsclust(series = series.norm, type="partitional",k=3L:15L, 
                       distance="dtw", clustering="pam",seed = 2)
 
-k = 7
+k = 6
 k_ind = k-2
 plot(clust.part[[k_ind]], type = "sc")
 
 #extract member names from cluster
 str(clust.part[[k_ind]]@cluster)
 df_species_clust <- data.frame(species = full_periodicity_list,cluster = as.numeric(clust.part[[k_ind]]@cluster))
-df_species_clust$species[df_species_clust$cluster==3]
+df_species_clust$species[df_species_clust$cluster==1]
 
 
 #computing the cluster validity indices

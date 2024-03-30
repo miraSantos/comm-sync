@@ -15,14 +15,16 @@ source(paste0(basepath,"/scripts/wavelet/plot_wt_simulations.R"))
 sim_x = seq(1,5000,1)
 period = 365
 noise = rnorm(length(sim_x),mean=0,sd=0.4)
-sim_y = sin((2*pi/period)*sim_x) + 5 + noise
-sim_y[c(599,600,601)] = 200
+amp = 1
+sim_y = amp*sin((2*pi/period)*sim_x) + 10 + noise
+sim_y[c(599:604)] = 100
 
-plot(sim_x,sim_y^(1/4),type="l")
+plot(sim_x,sim_y,type="l")
+plot(sim_x,sim_y^(1/4))
 
 dat = as.matrix(cbind(sim_x,sim_y^(1/4)))
 res= wt_arc(dat,mother="paul")
-plot.biwavelet_adv(res,plot.cb = T)
+plot.biwavelet_adv(res)
 
 plot.wt.simulation(res,sim_x,sim_y,save_folder=paste0(basepath,"/figures/wavelet_transforms/simulations/"),
                    save_name="simulation_spike_sin_paul.png")
@@ -124,32 +126,31 @@ plot.wt.simulation(res,x,y,save_folder=paste0(basepath,"/figures/wavelet_transfo
 #######################################################################################
 x = seq(1,5000,1)
 period = 365
-translation = 50
-amp1 = 10
-amp2 = 10
+translation = 5
+amp1 = 2
+amp2 = 2
 noise = rnorm(length(x),mean=0,sd=0.1)
-y1 = amp1*sin((2*pi/period)*x) + noise + 10
-y2 = amp2*sin((2*pi/period)*x) + translation + noise
+y1 = amp1*sin((2*pi/period)*x) + noise + 5
+y2 = amp2*sin((2*pi/period)*x) + translation + noise +5
 split = 2000
 y = append(y1[1:split],y2[(split+1):length(x)])
+plot(x,y)
 plot(x,y^(1/4),type="l")
+
 dat = as.matrix(cbind(x,y^(1/4)))
 
 res= wt_arc(dat,mother="morlet")
-plot.biwavelet_adv(res)
+plot.biwavelet_adv(res,plot.cb=T)
+
+plot.wt.simulation(res,x,y,save_folder=paste0(basepath,"/figures/wavelet_transforms/simulations/"),
+                   save_name="simulation_translate_noise_morlet.png")
 
 res= wt_arc(dat,mother="paul")
 plot.biwavelet_adv(res)
 
 plot.wt.simulation(res,x,y,save_folder=paste0(basepath,"/figures/wavelet_transforms/simulations/"),
-                   save_name="simulation_translate_noise_morlet.png")
-
-
-plot.wt.simulation(res,x,y,save_folder=paste0(basepath,"/figures/wavelet_transforms/simulations/"),
                    save_name="simulation_translate_noise_paul.png")
 
-plot.wt.simulation(res,x,y,save_folder=paste0(basepath,"/figures/wavelet_transforms/simulations/"),
-                   save_name="simulation_translate_noise_morlet.png")
 
 
 #######################################################################################
@@ -171,8 +172,6 @@ dat = as.matrix(cbind(sim_x,sim_y^(1/4)))
 res= wt_arc(dat,mother="morlet")
 plot.biwavelet_adv(res)
 
-res= wt_arc(dat,mother="paul")
-plot.biwavelet_adv(res)
 
 plot.wt.simulation(res,sim_x,sim_y,save_folder=paste0(basepath,"/figures/wavelet_transforms/simulations/"),
                    save_name="simulation_spike_sin_morlet.png")
@@ -192,8 +191,8 @@ plot.wt.simulation(res,sim_x,sim_y,save_folder=paste0(basepath,"/figures/wavelet
 amp_change = seq(1,10,length.out=5000)
 sim_x = seq(1,5000,1)
 period = 365
-noise = rnorm(5000,mean=0,sd=0.4)
-sim_y = amp_change*sin((2*pi/period)*sim_x) + 5 + noise
+noise = rnorm(5000,mean=0,sd=0.1)
+sim_y = amp_change*sin((2*pi/period)*sim_x) + 10 + noise
 
 plot(sim_x,sim_y^(1/4),type="l")
 
@@ -201,6 +200,10 @@ dat = as.matrix(cbind(sim_x,sim_y^(1/4)))
 
 res= wt_arc(dat,mother="morlet")
 plot.biwavelet_adv(res,plot.cb = T)
+
+plot.wt.simulation(res,sim_x,sim_y,save_folder=paste0(basepath,"/figures/wavelet_transforms/simulations/"),
+                   save_name="simulation_slow_amp_change_morlet.png")
+
 
 res= wt_arc(dat,mother="paul")
 plot.biwavelet_adv(res,plot.cb = T)
