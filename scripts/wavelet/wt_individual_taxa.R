@@ -32,19 +32,17 @@ df_carbon$date <- as.Date(df_carbon_metadata$sample_time, format="%Y-%m-%d %H:%M
 list_remove <- c("Guinardia_delicatula",
   "Guinardia_delicatula_TAG_internal_parasite",
   "Chaetoceros_didymus",
-  "Chaetoceros_didymus_TAG_external_flagellate",
-  "Thalassiosira",
-  "Thalassiosira_TAG_external_detritus")
+  "Chaetoceros_didymus_TAG_external_flagellate")
 
 list_add <- c("Guinardia_delicatula_merged",
-              "Chaetoceros_didymus_merged",
-              "Thalassiosira_merged")
+              "Chaetoceros_didymus_merged")
 
 
 df_carbonC <- df_carbon %>% mutate(Guinardia_delicatula_merged = Guinardia_delicatula + Guinardia_delicatula_TAG_internal_parasite,
-                      Chaetoceros_didymus_merged = Chaetoceros_didymus+ Chaetoceros_didymus_TAG_external_flagellate,
-                      Thalassiosira_merged = Thalassiosira+Thalassiosira_TAG_external_detritus) %>%
+                      Chaetoceros_didymus_merged = Chaetoceros_didymus+ Chaetoceros_didymus_TAG_external_flagellate) %>%
                 select(-all_of(list_remove))
+
+df_carbonC$doy_numeric <- yday(df_carbonC$date)
 
 list_remove2 <- c("pennate_Pseudo-nitzschia","Pseudo-nitzschia")
 list_add2 <- c("pennate_Pseudo.nitzschia","Pseudo.nitzschia")
@@ -75,6 +73,22 @@ dat = as.matrix(cbind(time_index,df_carbonC_filled[protist_tricho_labelC[i]]^(1/
 res= wt_arc(dat,mother="morlet")
 super_res[[i]]<-res
 }
+
+df_carbonC_filled$year <- year(df_carbonC_filled$date)
+####################### compute individual wavelet
+#find index of deseired species 
+i = which(protist_tricho_labelC=="Tripos")
+print(paste(i,"of",length(protist_tricho_labelC)))
+df_filt <- df_carbonC_filled %>% filter(year <=2022)
+time_index = seq(1,nrow(df_filt),1)
+dat = as.matrix(cbind(time_index,df_filt[protist_tricho_labelC[i]]^(1/4)))
+res= wt_arc(dat,mother="morlet",psig.level = c(0.95,0.99))
+
+plot.biwavelet_adv(res)
+df_carbonC$year <- year(df_carbonC$date)
+plot(df_carbonC$date,df_carbonC$Tripos^(1/4))
+df_carbonC %>% filter(year <=2022) %>% ggplot() + 
+  geom_point(aes(x=doy_numeric,y=Tripos,color=as.factor(year)))
 
 #PLOT INDIVIDUAL
 load(paste0(basepath,"/data/r_objects/wavelet_output_species_2024_Mar_15.RData"))

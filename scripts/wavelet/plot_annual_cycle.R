@@ -43,7 +43,6 @@ for (species in full_periodicity_list){
   ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_cycle/week_annual_cycle/","week_annual_cycle_",species,".png"),width=800,height=800,units="px",dpi=100)
 }
 
-
 #generate violin plots for week of year
 for (species in full_periodicity_list){
   print(species)
@@ -54,7 +53,6 @@ for (species in full_periodicity_list){
     ggtitle(species) + geom_line(data=week_means,aes_string(x="week",y=species),color="red")
   ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_cycle/week_annual_cycle/","week_annual_cycle_",species,".png"),width=800,height=800,units="px",dpi=100)
 }
-
 
 ####################
 #plot individual
@@ -120,10 +118,22 @@ ggplot(data=df_carbonC_wyear_mean) + geom_line(aes(x=week,y=Gonyaulax,
 for(i in full_periodicity_list){
   print(i)
 df_carbonC_wyear_mean %>% 
-  # mutate_at(protist_tricho_labelC,quadroot) %>%
+  mutate_at(protist_tricho_labelC,quadroot) %>%
   ggplot() + geom_line(aes_string(x="week",y=i,color="year"))+
     xlab("Week") + ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"))+
-  ggtitle(i)+scale_x_continuous(breaks=seq(1,53,4))
+  ggtitle(i)+scale_x_continuous(breaks=seq(1,53,4))+
+  ylim(0,20)
+  ggsave(filename = paste0(basepath,"/figures/wavelet_transforms/annual_cycle/week_year_quadroot/week_year_annual_cycle_",i,".png"),
+         width=600,height=500,units="px",dpi=100)
+}
+
+for(i in full_periodicity_list){
+  print(i)
+  df_carbonC_wyear_mean %>% 
+    ggplot() + geom_line(aes_string(x="week",y=i,color="year"))+
+    xlab("Week") + ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"))+
+    ggtitle(i)+scale_x_continuous(breaks=seq(1,53,4))+
+    ylim(0,20)
   ggsave(filename = paste0(basepath,"/figures/wavelet_transforms/annual_cycle/week_year/week_year_annual_cycle_",i,".png"),
          width=600,height=500,units="px",dpi=100)
 }

@@ -1,4 +1,5 @@
 #PURPOSE: extract contours from wavelet plot and measure x and y dimension
+basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
                       "fields","ggplot2","tibbletime","dplyr","sets",
                       "reshape2","ggformula","tidyr","moments","grDevices","rlist","rapport","forcats")
