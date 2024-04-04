@@ -32,7 +32,8 @@ df_carbon$date <- as.Date(df_carbon_metadata$sample_time, format="%Y-%m-%d %H:%M
 list_remove <- c("Guinardia_delicatula",
   "Guinardia_delicatula_TAG_internal_parasite",
   "Chaetoceros_didymus",
-  "Chaetoceros_didymus_TAG_external_flagellate")
+  "Chaetoceros_didymus_TAG_external_flagellate",
+  "Thalassiosira_TAG_external_detritus")
 
 list_add <- c("Guinardia_delicatula_merged",
               "Chaetoceros_didymus_merged")
@@ -75,6 +76,9 @@ super_res[[i]]<-res
 }
 
 df_carbonC_filled$year <- year(df_carbonC_filled$date)
+
+save(super_res,df_carbonC_filled,
+     file=paste0(basepath,"data/r_objects/unfilled/2023_Apr_03_df_carbonC_super_res.RData"))
 ####################### compute individual wavelet
 #find index of deseired species 
 i = which(protist_tricho_labelC=="Tripos")

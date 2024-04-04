@@ -11,8 +11,7 @@ lapply(list.of.packages, require, character.only = TRUE)
 ################################################################################
 #COMPUTE CONTOUR LINES FOR ANNUAL PERIOD
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
-load(paste0(basepath,"/data/r_objects/wavelet_output_species_2024_Mar_22_morlet.RData"))
-
+load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_03_df_carbonC_super_res.RData"))
 
 #store dimensions of annual contours
 annual_lengths <- vector(length=length(super_res))
@@ -101,13 +100,14 @@ df_annual %>%group_by(func_group) %>%
 #complete bar plot 
 ####################################################################################
 #generating color codes
+df_annual = df_annual %>% select(-Thalassiosira_TAG_external_detritus)
 my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
 map <- data.frame(func_group=func_group_list,colors=my_colors)
 color_code = left_join(df_annual[order(df_annual$annual_duration,df_annual$func_group),],map,by="func_group")$colors
 map_dict <- map$colors
 names(map_dict) <- map$func_group
 
-df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>% 
+df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>%
   mutate(species=factor(species,levels=species)) %>%
   ggplot() +
   geom_bar(aes(x= species,y=annual_duration,fill=func_group),
@@ -171,8 +171,8 @@ annual_dims %>%
   scale_y_continuous(breaks=seq(0,365*14,365*2),
                      labels=seq(2008,2008+14,2),limits=c(0,365*14))
 
-ggsave(filename=paste0(basepath,"figures/annual_periodicity_line_range.png"),
-       width=1000,height=1300,units="px",dpi=100)
+ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_line_range.png"),
+       width=1300,height=1000,units="px",dpi=200)
 
 #################################################################################
 #compute contour dimensions for an INDIVIDUAL WAVELET

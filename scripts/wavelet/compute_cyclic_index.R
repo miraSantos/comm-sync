@@ -78,16 +78,15 @@ for(y in year){
 }
 
 #take mean of cyclic index
-c_index = colMeans((df_cor[full_periodicity_list]))
+c_index = colMeans(abs((df_cor[full_periodicity_list])))
 c_index = data.frame(c_index)
 c_index$species <- rownames(c_index)
 
-
-
-#plot correloation over tiem for each species
+#plot correlation over time for each species
 for(ii in 1:length(full_periodicity_list)){
   print(paste0(ii," of ",length(full_periodicity_list)))
 ggplot(data=df_cor) + geom_line(aes_string(x="year",y=full_periodicity_list[ii]))+
+  geom_point(aes_string(x="year",y=full_periodicity_list[ii]))+
   scale_x_continuous(breaks=seq(2006,2023,2))+ylim(-1,1)+
   ylab("Correlation Coefficient") +xlab("Year")+
   ggtitle(full_periodicity_list[ii])
