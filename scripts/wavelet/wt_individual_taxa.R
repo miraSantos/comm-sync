@@ -27,6 +27,9 @@ ciliate_label <-read.csv(paste0(data_path,carbonC_list[2]),header=F)$V1
 nanoflagcocco_label <- read.csv(paste0(data_path,carbonC_list[7]),header=F)$V1
 metazoan_label <- read.csv(paste0(data_path,carbonC_list[6]),header=F)$V1
 
+save(protist_tricho_labelC,diatom_labelC,ciliate_label,dino_label,nanoflagcocco_label,metazoan_label,
+     file=paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
+
 df_carbon$date <- as.Date(df_carbon_metadata$sample_time, format="%Y-%m-%d %H:%M:%S")
 
 list_remove <- c("Guinardia_delicatula",
@@ -62,8 +65,6 @@ df_carbonC_filled <- df_carbonC %>%
   mutate(across(protist_tricho_labelC,~replace_na(.,mean(.,na.rm=T)))) %>%
   select(all_of(c(protist_tricho_labelC,"date","doy_numeric")))
 
-save(protist_tricho_labelC,diatom_labelC,ciliate_label,dino_label,nanoflagcocco_label,metazoan_label,
-     file=paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
 
 super_res <-list()
 

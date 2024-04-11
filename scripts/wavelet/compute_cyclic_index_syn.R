@@ -1,20 +1,34 @@
-syn_url <- "/home/mira/MIT-WHOI/data/2023/MVCO_syn_euk_conc_2023_Mar.csv"
 
+list.of.packages <- c("lubridate","dplyr","tidyr","zoo","ggplot2")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+lapply(list.of.packages, require, character.only = TRUE)
+
+
+#reading in data
+basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
+syn_url <- "/home/mira/MIT-WHOI/data/2023/MVCO_syn_euk_conc_2023_Mar.csv"
 df_syn_euk <- read.csv(syn_url)
 df_syn_euk$date <- as.Date(df_syn_euk$Time_UTC,format = "%d-%b-%Y %H:%M:%S")
 head(df_syn_euk)
 
+#computing daily mean
 df_syn_euk <- df_syn_euk %>% group_by(date) %>% 
   summarise(syn_biovol_perml = mean(sum_syn_biovol_perml,na.rm=T),
             euk_biovol_perml = mean(sum_euk_biovol_perml,na.rm=T)) %>%
   drop_na()
 
+#select columns to compute index for
+cols = c("euk_biovol_perml","syn_biovol_perml")
+
+#Compute cyclic index
+#############################################################
+#create complete week year index (will left join with dataframe later)
+
 df_syn_euk$doy_numeric=yday(df_syn_euk$date)
 df_syn_euk$week=week(df_syn_euk$date)
 df_syn_euk$year=year(df_syn_euk$date)
 df_syn_euk$wyear <- paste0(df_syn_euk$week,"-",df_syn_euk$year)
-
-cols = c("euk_biovol_perml","syn_biovol_perml")
 
 week_means_syn <- df_syn_euk %>% 
   mutate_at(cols ,quadroot) %>%
@@ -27,9 +41,7 @@ df_syn_wyear_mean <-df_syn_euk %>% group_by(wyear) %>%
   distinct(wyear, .keep_all=TRUE) %>%
   ungroup()
 
-#Compute cyclic index
-#############################################################
-#create complete week year index (will left join with dataframe later)
+
 week <- seq(1,53,1)
 year <- seq(min(df_syn_wyear_mean$year),max(df_syn_wyear_mean$year),1)
 week_list <- rep(week,length(year))
@@ -79,7 +91,7 @@ head(c_index_syn)
 for(ii in 1:length(cols)){
   print(paste0(ii," of ",length(cols)))
   ggplot(data=df_cor) + geom_line(aes_string(x="year",y=cols[ii]))+
-    geom_point(aes_string(x="year",y=cols[ii]))+
+    geom_point(aes(x={{year}},y=cols[ii]))+
     scale_x_continuous(breaks=seq(min(df$year),max(df$year),2))+ylim(-1,1)+
     ylab("Correlation Coefficient") +xlab("Year")+
     ggtitle(cols[ii])
@@ -87,5 +99,14 @@ for(ii in 1:length(cols)){
          width=600,height=500,units="px",dpi=120)
 }
 
-ggplot(data=df_syn_euk) + geom_point(aes(x=week,y=syn_biovol_perml^(1/4),color=as.factor(year)))
-ggplot(data=df_syn_euk) + geom_point(aes(x=week,y=euk_biovol_perml^(1/4),color=as.factor(year)))
+#plot annual cycle colored by year 
+ggplot(data=df_syn_euk) + geom_point(aes(x=week,y=syn_biovol_perml^(1/4),color=as.factor(year))) + 
+  geom_line(aes(x=week,y=syn_biovol_perml^(1/4),color=as.factor(year)))+
+  xlab("Week") + ylab(expression("(Biovolume per ml)"^(1/4)))+
+  ggtitle("Syn")
+ggplot(data=df_syn_euk) + geom_point(aes(x=week,y=euk_biovol_perml^(1/4),color=as.factor(year))) +
+  geom_line(aes(x=week,y=euk_biovol_perml^(1/4),color=as.factor(year)))+
+  xlab("Week") + ylab(expression("(Biovolume per ml)"^(1/4)))+
+  ggtitle("Euks")
+
+
