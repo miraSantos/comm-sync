@@ -65,7 +65,7 @@ annual_peak <- as.data.frame(matrix(NaN,nrow = 0,ncol=length(protist_tricho_labe
 names(annual_peak) <- c("year",protist_tricho_labelC)
 
 #loop through the years and store colreation
-for(y in 1:length(year)){
+for(y in 1:length(years)){
   print(years[y])
   #extract week year means of a specific year
   individual_year <- ref_year_interp %>% ungroup() %>% filter(year == years[y]) %>% select(protist_tricho_labelC)
@@ -78,12 +78,15 @@ for(y in 1:length(year)){
 }
 
 
-#take mean of cyclic index
-c_index = colMeans(abs((df_cor[,protist_tricho_labelC])))
-c_index_sd <- apply(df_cor[,protist_tricho_labelC], 2, sd)
-c_index = data.frame(c_index=c_index,sd=c_index_sd)
-c_index$species <- rownames(c_index)
+s#take mean of cyclic index
+c_index_mean = colMeans((df_cor[,protist_tricho_labelC]))
+c_index_sd <- apply(df_cor[,protist_tricho_labelC], 2, sd,na.rm=T)
 
+consistency.fun <- function(annual_peak){1 - sd(annual_peak - mean(annual_peak))/mean(annual_peak)}
+consistency_index <- apply(annual_peak[,protist_tricho_labelC],2,consistency.fun)
+
+c_index = data.frame(cyclicity_index=c_index_mean,sd=c_index_sd,consistency = consistency_index)
+c_index$species <- rownames(c_index)
 
 ################################################
 #plot correlation over time for each species
@@ -92,6 +95,7 @@ for(ii in 1:length(protist_tricho_labelC)){
   print(paste0(ii," of ",length(protist_tricho_labelC)))
 ggplot(data=df_cor) + geom_line(aes_string(x="year",y=protist_tricho_labelC[ii]))+
   geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]))+
+  geom_hline(aes(yintercept=0),color="red")+
   scale_x_continuous(breaks=seq(2006,2023,2))+ylim(-1,1)+
   ylab("Correlation Coefficient") +xlab("Year")+
   ggtitle(protist_tricho_labelC[ii])
@@ -122,27 +126,47 @@ for(func_group in 1:length(func_group_list)){
 #for colorcoding text by functional group
 my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
 map <- data.frame(func_group=func_group_list,colors=my_colors)
-color_code = left_join(c_index[order(c_index$c_index,c_index$func_group),],map,by="func_group")$colors
+color_code = left_join(c_index[order(c_index$cyclicity_index,c_index$func_group),],map,by="func_group")$colors
 map_dict <- map$colors
 names(map_dict) <- map$func_group
 
 #plot c_index
 c_index %>% drop_na() %>%
-ggplot() + geom_bar(aes(x=reorder(species,+c_index),y=c_index,fill=func_group),
+ggplot() + geom_bar(aes(x=reorder(species,+cyclicity_index),y=cyclicity_index,fill=func_group),
                                 stat="identity")+
   scale_fill_manual(values=map_dict,name="Functional\nGroup")+
   coord_flip()+ylim(0,1)+
   ylab("Cyclicity Index")+xlab("Species")+
   theme(axis.text.y = element_text(colour = color_code))
 
-ggplot(data=c_index) + geom_bar(aes(x=reorder(species,+sd),y=sd,fill=func_group),
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot.png"),
+       width=1500,height=3000,units="px",dpi=200)
+
+####################
+ggplot(data=c_index) + geom_bar(aes(x=reorder(species,+sd),
+                                    y=sd,
+                                    fill=func_group),
                                 stat="identity")+
   coord_flip()+
   ylab("Standard Deviation")+xlab("Species")+
   scale_fill_manual(values=map_dict,name="Functional\nGroup")
 
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_sd.png"),
+       width=1500,height=3000,units="px",dpi=200)
+
+############################
+#consistency
+#############################
+c_index %>% ggplot() +
+  geom_bar(aes(x=reorder(species,+consistency),y=consistency,fill=func_group),
+           stat="identity")+
+  coord_flip()+ ylim(0,1)+
+  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
+  xlab("Consistency Index") + ylab("Species")
+
+
 ################################################################################
-#### HISTOGRAM
+#### HISTOGRAM of cyclity
 ###############################################################################
 bin_count = 12
 set.seed(7)
@@ -152,16 +176,16 @@ colors = sample(cbbPalette,4)
 
 ggplot() +
   geom_density(data=c_index[c_index$func_group=="Diatom",],
-                 aes(x=c_index,y=after_stat(count)/sum(after_stat(count)),
+                 aes(x=cyclicity_index,y=after_stat(count)/sum(after_stat(count)),
                      fill="Diatom",color="Diatom"),alpha=0.4)+
   geom_density(data=c_index[c_index$func_group=="Dinoflagellate",],
-                 aes(x=c_index,y=after_stat(count)/sum(after_stat(count)),
+                 aes(x=cyclicity_index,y=after_stat(count)/sum(after_stat(count)),
                      fill="Dinoflagellate",color="Dinoflagellate"),alpha=0.4)+
   geom_density(data=c_index[c_index$func_group=="Nano-Flag-Cocco",],
-                 aes(x=c_index,y=after_stat(count)/sum(after_stat(count)),
+                 aes(x=cyclicity_index,y=after_stat(count)/sum(after_stat(count)),
                      fill="Nano-Flag-Cocco",color="Nano-Flag-Cocco"),alpha=0.4)+
   geom_density(data=c_index[c_index$func_group=="Ciliate",],
-                 aes(x=c_index,y=after_stat(count)/sum(after_stat(count)),
+                 aes(x=cyclicity_index,y=after_stat(count)/sum(after_stat(count)),
                      fill="Ciliate",color="Ciliate"),alpha=0.4)+
   xlim(0,1)+
   xlab("Cyclicity Index (Mean Correlation)") + ylab("Normalized Density") + 
@@ -173,7 +197,7 @@ ggplot() +
                      labels=c("Ciliate","Diatom","Dinoflagellate","Nano-Flag-Cocco"),
                     values = colors)
 
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_normalized.png"),
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_cyclicity_index_quadroot_normalized.png"),
        width=1500,height=800,units="px",dpi=200)
 
 # IDNIVDUAL HISTOGRAM
@@ -186,11 +210,13 @@ c_index %>%
   xlab("Cyclicity Index") + 
   guides(fill=guide_legend(title="Functional Group"))
 
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot.png"),
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_cyclic_index_quadroot.png"),
        width=1500,height=3000,units="px",dpi=200)
 
 
-####################### HISTOGRAM OF SD
+########################################################################
+#HISTOGRAM OF SD
+#######################################################################
 ggplot() +
   geom_density(data=c_index[c_index$func_group=="Diatom",],
                aes(x=sd,y=after_stat(count)/sum(after_stat(count)),
@@ -211,12 +237,43 @@ ggplot() +
                      values = colors)+
   scale_fill_manual(name="Functional Group",
                     labels=c("Ciliate","Diatom","Dinoflagellate","Nano-Flag-Cocco"),
-                    values = colors)
+                    values = colors)+
+  xlim(0,0.5)
 
 
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/standard_deviation_quadroot.png"),
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_standard_deviation_quadroot.png"),
        width=1500,height=800,units="px",dpi=200)
 
+
+#########################################################################
+#Histogram of Consistency in Annual Peak
+########################################################################
+
+ggplot() +
+  geom_density(data=c_index[c_index$func_group=="Diatom",],
+               aes(x=consistency,y=after_stat(count)/sum(after_stat(count)),
+                   fill="Diatom",color="Diatom"),alpha=0.4)+
+  geom_density(data=c_index[c_index$func_group=="Dinoflagellate",],
+               aes(x=consistency,y=after_stat(count)/sum(after_stat(count)),
+                   fill="Dinoflagellate",color="Dinoflagellate"),alpha=0.4)+
+  geom_density(data=c_index[c_index$func_group=="Nano-Flag-Cocco",],
+               aes(x=consistency,y=after_stat(count)/sum(after_stat(count)),
+                   fill="Nano-Flag-Cocco",color="Nano-Flag-Cocco"),alpha=0.4)+
+  geom_density(data=c_index[c_index$func_group=="Ciliate",],
+               aes(x=consistency,y=after_stat(count)/sum(after_stat(count)),
+                   fill="Ciliate",color="Ciliate"),alpha=0.4)+
+  xlab("Consistency in Annual Peak") + ylab("Normalized Density") + 
+  guides(fill=guide_legend(title="Functional Group"))+
+  scale_color_manual(name="Functional Group",
+                     labels=c("Ciliate","Diatom","Dinoflagellate","Nano-Flag-Cocco"),
+                     values = colors)+
+  scale_fill_manual(name="Functional Group",
+                    labels=c("Ciliate","Diatom","Dinoflagellate","Nano-Flag-Cocco"),
+                    values = colors)+
+  xlim(0,1)
+
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_consistency_annual_peak_quadroot.png"),
+       width=1500,height=800,units="px",dpi=200)
 
 #plot individual interpolation
 y = 2023

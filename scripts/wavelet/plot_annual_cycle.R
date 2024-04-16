@@ -94,6 +94,7 @@ plot(df_carbonC$date,df_carbonC$Nanoneis,xlab="Date",ylab="Nanoneis Carbon Conce
 plot(df_carbonC$date,df_carbonC$Leptocylindrus,xlab="Date",ylab="Leptocylinderus Carbon Concentration (ug/ml)")+
   scale_x_discrete(date_breaks="2 year",label)
 
+###############################################
 df_carbonC$year <- year(df_carbonC$date)
 df_carbonC$week <- week(df_carbonC$date)
 df_carbonC$wyear <- paste0(df_carbonC$week,"-",df_carbonC$year)
@@ -115,7 +116,7 @@ ggplot(data=df_carbonC_wyear_mean) + geom_line(aes(x=week,y=Gonyaulax,
   xlab("Week of Year") + ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"^(1/4)))+
   ggtitle("Gonyaulax")
 
-for(i in full_periodicity_list){
+for(i in protist_tricho_labelC){
   print(i)
 df_carbonC_wyear_mean %>% 
   mutate_at(protist_tricho_labelC,quadroot) %>%
@@ -126,6 +127,15 @@ df_carbonC_wyear_mean %>%
   ggsave(filename = paste0(basepath,"/figures/wavelet_transforms/annual_cycle/week_year_quadroot/week_year_annual_cycle_",i,".png"),
          width=600,height=500,units="px",dpi=100)
 }
+i = "Tripos_furca"
+df_carbonC_wyear_mean %>% 
+  mutate_at(protist_tricho_labelC,quadroot) %>%
+  ggplot() + geom_line(aes_string(x="week",y=i,color="year"))+
+  xlab("Week") + ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"))+
+  ggtitle(i)+scale_x_continuous(breaks=seq(1,53,4))+
+  ylim(0,20)
+ggsave(filename = paste0(basepath,"/figures/wavelet_transforms/annual_cycle/week_year_quadroot/week_year_annual_cycle_",i,".png"),
+       width=600,height=500,units="px",dpi=100)
 
 for(i in full_periodicity_list){
   print(i)
@@ -138,4 +148,40 @@ for(i in full_periodicity_list){
          width=600,height=500,units="px",dpi=100)
 }
 i = 1
+
+###########################################################################
+#
+###################################################################################
+week_means %>% select(contains("Chaetoceros"),week,-Chaetoceros) %>%
+  gather(key=species,value=carbon_conc,-c(week)) %>%
+  ggplot() + geom_line(aes(x=week,y=carbon_conc^(1/4),color = species)) +
+  xlab("Week of Year") +
+  ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"^(1/4)))+
+  scale_x_continuous(breaks=seq(0,53,4))+
+  ylim(0,1.5)
+
+ggsave(filename = paste0(basepath,"/figures/cyclic_index/chaetoceros_week_mean_concentration.png"),
+       width=800,height=500,units="px",dpi=100)
+
+
+df_cor %>%  select(contains("Chaetoceros"),year,-Chaetoceros) %>%
+  gather(key=species,value=corr,-c(year)) %>%
+  ggplot() + geom_line(aes(x=year,y=corr,color=species)) +
+  geom_point(aes(x=year,y=corr,color=species,shape=species)) +
+  geom_hline(aes(yintercept=0),color="black",linetype="dashed")+
+  ylim(-1,1) +
+  scale_x_continuous(breaks=seq(2006,2023,2))+
+  xlab("Year") + ylab("Correlation")
+
+ggsave(filename = paste0(basepath,"/figures/cyclic_index/chaetoceros_correlation_over_time.png"),
+       width=800,height=500,units="px",dpi=100)
+
+#############################################################
+#Tripos Bloom
+##############################################################
+df_carbonC %>% select(contains("Tripos"),-contains("Dino"),date,year) %>%
+  filter(year==2023) %>%
+  gather(key=species,value=conc,-c(date,year))%>%
+  ggplot() + geom_line(aes(x=date,y=conc,color=species),alpha=0.7)+
+  ggtitle("2023 Tripos Bloom")
 

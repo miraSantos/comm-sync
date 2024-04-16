@@ -1,4 +1,5 @@
 #PURPOSE: GENERATE WAVELET R DATA OBJECTS AND GENERATE WAVELET SPECTRA
+basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
                       "fields","ggplot2","tibbletime","dplyr","sets",
                       "reshape2","ggformula","tidyr","moments","grDevices")
@@ -27,8 +28,6 @@ ciliate_label <-read.csv(paste0(data_path,carbonC_list[2]),header=F)$V1
 nanoflagcocco_label <- read.csv(paste0(data_path,carbonC_list[7]),header=F)$V1
 metazoan_label <- read.csv(paste0(data_path,carbonC_list[6]),header=F)$V1
 
-save(protist_tricho_labelC,diatom_labelC,ciliate_label,dino_label,nanoflagcocco_label,metazoan_label,
-     file=paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
 
 df_carbon$date <- as.Date(df_carbon_metadata$sample_time, format="%Y-%m-%d %H:%M:%S")
 
@@ -52,6 +51,10 @@ list_remove2 <- c("pennate_Pseudo-nitzschia","Pseudo-nitzschia")
 list_add2 <- c("pennate_Pseudo.nitzschia","Pseudo.nitzschia")
 protist_tricho_labelC <- append(protist_tricho_label[!protist_tricho_label %in% append(list_remove,list_remove2)],append(list_add,list_add2))
 diatom_labelC <- append(diatom_label[!diatom_label %in% append(list_remove,list_remove2)],append(list_add,list_add2))
+
+
+save(protist_tricho_labelC,diatom_labelC,ciliate_label,dino_label,nanoflagcocco_label,metazoan_label,
+     file=paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
 
 df_carbonC_filled <- df_carbonC %>% 
   group_by(date) %>%
