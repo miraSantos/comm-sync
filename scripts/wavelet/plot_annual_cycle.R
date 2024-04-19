@@ -6,7 +6,7 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/df_carbon_2024_Mar_24.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_17_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
 
 df_carbonC$doy_numeric <- yday(df_carbonC$date)
@@ -25,7 +25,6 @@ week_means <- df_carbonC %>%
 
 i = 1
 week_means  %>% ggplot() + geom_violin(aes_string(x="week",y=full_periodicity_list[i]))
-
 
 ## PLOT TIME SERIES
 df_carbonC %>% ggplot() + 
@@ -129,11 +128,12 @@ df_carbonC_wyear_mean %>%
 }
 i = "Tripos_furca"
 df_carbonC_wyear_mean %>% 
-  mutate_at(protist_tricho_labelC,quadroot) %>%
+  mutate_at(protist_tricho_labelC,quadroot)%>%
   ggplot() + geom_line(aes_string(x="week",y=i,color="year"))+
   xlab("Week") + ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"))+
-  ggtitle(i)+scale_x_continuous(breaks=seq(1,53,4))+
+  ggtitle(i)+scale_x_discrete(breaks=seq(1,53,4))+
   ylim(0,20)
+
 ggsave(filename = paste0(basepath,"/figures/wavelet_transforms/annual_cycle/week_year_quadroot/week_year_annual_cycle_",i,".png"),
        width=600,height=500,units="px",dpi=100)
 
@@ -152,13 +152,25 @@ i = 1
 ###########################################################################
 #
 ###################################################################################
-week_means %>% select(contains("Chaetoceros"),week,-Chaetoceros) %>%
+week_means %>%
+  select(c("Chaetoceros_tenuissimus","Chaetoceros_socialis",
+           "Chaetoceros_didymus_merged",
+           "Chaetoceros_peruvianis",
+           ,"week")) %>%
   gather(key=species,value=carbon_conc,-c(week)) %>%
   ggplot() + geom_line(aes(x=week,y=carbon_conc^(1/4),color = species)) +
   xlab("Week of Year") +
   ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"^(1/4)))+
-  scale_x_continuous(breaks=seq(0,53,4))+
-  ylim(0,1.5)
+  scale_x_continuous(breaks=seq(0,53,4))
+
+week_means %>%
+  select(c("Chaetoceros_throndsenii","Chaetoceros_subtilis","Chaetoceros_danicus","Chaetoceros_similis","week")) %>%
+  gather(key=species,value=carbon_conc,-c(week)) %>%
+  ggplot() + geom_line(aes(x=week,y=carbon_conc^(1/4),color = species)) +
+  xlab("Week of Year") +
+  ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"^(1/4)))+
+  scale_x_continuous(breaks=seq(0,53,4))
+
 
 ggsave(filename = paste0(basepath,"/figures/cyclic_index/chaetoceros_week_mean_concentration.png"),
        width=800,height=500,units="px",dpi=100)
@@ -168,10 +180,36 @@ df_cor %>%  select(contains("Chaetoceros"),year,-Chaetoceros) %>%
   gather(key=species,value=corr,-c(year)) %>%
   ggplot() + geom_line(aes(x=year,y=corr,color=species)) +
   geom_point(aes(x=year,y=corr,color=species,shape=species)) +
+  geom_smooth(aes(x=year,y=corr),method = "lm")+
   geom_hline(aes(yintercept=0),color="black",linetype="dashed")+
   ylim(-1,1) +
   scale_x_continuous(breaks=seq(2006,2023,2))+
   xlab("Year") + ylab("Correlation")
+
+df_cor %>%
+  select(c("Chaetoceros_throndsenii","Chaetoceros_subtilis","Chaetoceros_danicus","Chaetoceros_similis","year")) %>%
+  gather(key=species,value=corr,-c(year)) %>%
+  ggplot() +
+  geom_point(aes(x=year,y=corr,color=species,shape=species)) +
+  geom_smooth(aes(x=year,y=corr),method = "lm")+
+  geom_hline(aes(yintercept=0),color="black",linetype="dashed")+
+  ylim(-1,1) +
+  scale_x_continuous(breaks=seq(2006,2023,2))+
+  xlab("Year") + ylab("Correlation")
+
+
+df_cor %>%
+  select(c("Chaetoceros_throndsenii","Chaetoceros_subtilis","Chaetoceros_danicus","Chaetoceros_similis","year")) %>%
+  gather(key=species,value=corr,-c(year)) %>%
+  ggplot() + geom_line(aes(x=year,y=corr,color=species)) +
+  geom_point(aes(x=year,y=corr,color=species,shape=species)) +
+  geom_smooth(aes(x=year,y=corr),method = "lm")+
+  geom_hline(aes(yintercept=0),color="black",linetype="dashed")+
+  ylim(-1,1) +
+  scale_x_continuous(breaks=seq(2006,2023,2))+
+  xlab("Year") + ylab("Correlation")
+
+
 
 ggsave(filename = paste0(basepath,"/figures/cyclic_index/chaetoceros_correlation_over_time.png"),
        width=800,height=500,units="px",dpi=100)

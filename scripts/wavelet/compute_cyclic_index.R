@@ -5,13 +5,15 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_03_df_carbonC_super_res.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_17_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
 
 #add date time objects
 df_carbonC$doy_numeric <- yday(df_carbonC$date)
 df_carbonC$week <- week(df_carbonC$date)
 quadroot <- function(x){x^(1/4)}
+
+head(df_carbonC)
 
 #compute day of year and weekly means 
 doy_means <- df_carbonC %>% 
@@ -77,9 +79,11 @@ for(y in 1:length(years)){
   annual_peak <- rbind(annual_peak,c(year=years[y],sapply(individual_year, max, na.rm = TRUE)))
 }
 
+names(annual_peak) <- c("year",protist_tricho_labelC)
 
-s#take mean of cyclic index
-c_index_mean = colMeans((df_cor[,protist_tricho_labelC]))
+
+#take mean of cyclic index
+c_index_median = apply(df_cor[,protist_tricho_labelC],2,median)
 c_index_sd <- apply(df_cor[,protist_tricho_labelC], 2, sd,na.rm=T)
 
 consistency.fun <- function(annual_peak){1 - sd(annual_peak - mean(annual_peak))/mean(annual_peak)}
@@ -188,7 +192,7 @@ ggplot() +
                  aes(x=cyclicity_index,y=after_stat(count)/sum(after_stat(count)),
                      fill="Ciliate",color="Ciliate"),alpha=0.4)+
   xlim(0,1)+
-  xlab("Cyclicity Index (Mean Correlation)") + ylab("Normalized Density") + 
+  xlab("Cyclicity Index (Median Correlation)") + ylab("Normalized Density") + 
   guides(fill=guide_legend(title="Functional Group"))+
   scale_color_manual(name="Functional Group",
                      labels=c("Ciliate","Diatom","Dinoflagellate","Nano-Flag-Cocco"),
@@ -197,14 +201,14 @@ ggplot() +
                      labels=c("Ciliate","Diatom","Dinoflagellate","Nano-Flag-Cocco"),
                     values = colors)
 
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_cyclicity_index_quadroot_normalized.png"),
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_cyclicity_index_median_quadroot_normalized.png"),
        width=1500,height=800,units="px",dpi=200)
 
 # IDNIVDUAL HISTOGRAM
 c_index %>% 
   group_by(func_group) %>% filter(func_group=="Diatom")%>%
   filter(func_group !="Unknown")%>%
-  ggplot() + geom_histogram(aes(x=c_index,
+  ggplot() + geom_histogram(aes(x=cyclicity_index,
                                 fill=func_group),alpha=0.4,bins=12)+
   xlim(0,1)+
   xlab("Cyclicity Index") + 
