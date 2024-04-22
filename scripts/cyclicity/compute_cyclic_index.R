@@ -1,12 +1,14 @@
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 list.of.packages <- c("RColorBrewer", "lubridate",
-                      "ggplot2","tibbletime","dplyr","sets","dtw","zoo","tidyr")
+                      "ggplot2","tibbletime","dplyr","tidyr","zoo","stringr",
+                      "ggsignif","plotly")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_17_df_carbonC.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_19_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_19_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_19_df_carbonC_filled.RData"))
 
 #add date time objects
 df_carbonC$doy_numeric <- yday(df_carbonC$date)
@@ -81,15 +83,14 @@ for(y in 1:length(years)){
 
 names(annual_peak) <- c("year",protist_tricho_labelC)
 
-
 #take mean of cyclic index
-c_index_median = apply(df_cor[,protist_tricho_labelC],2,median)
+c_index_median = apply(df_cor[,protist_tricho_labelC],2,median,na.rm=T)
 c_index_sd <- apply(df_cor[,protist_tricho_labelC], 2, sd,na.rm=T)
 
 consistency.fun <- function(annual_peak){1 - sd(annual_peak - mean(annual_peak))/mean(annual_peak)}
 consistency_index <- apply(annual_peak[,protist_tricho_labelC],2,consistency.fun)
 
-c_index = data.frame(cyclicity_index=c_index_mean,sd=c_index_sd,consistency = consistency_index)
+c_index = data.frame(cyclicity_index=c_index_median,sd=c_index_sd,consistency = consistency_index)
 c_index$species <- rownames(c_index)
 
 ################################################
@@ -97,9 +98,9 @@ c_index$species <- rownames(c_index)
 ###############################################
 for(ii in 1:length(protist_tricho_labelC)){
   print(paste0(ii," of ",length(protist_tricho_labelC)))
-ggplot(data=df_cor) + geom_line(aes_string(x="year",y=protist_tricho_labelC[ii]))+
-  geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]))+
-  geom_hline(aes(yintercept=0),color="red")+
+  ggplot(data=df_cor) + geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]))+
+    geom_segment(aes_string(x="year",y=0,xend="year",yend=protist_tricho_labelC[ii]))+
+    geom_hline(aes(yintercept=0),color="black")+
   scale_x_continuous(breaks=seq(2006,2023,2))+ylim(-1,1)+
   ylab("Correlation Coefficient") +xlab("Year")+
   ggtitle(protist_tricho_labelC[ii])
@@ -108,13 +109,30 @@ ggsave(filename=paste0(basepath,"/figures/cyclic_index/correlation_over_time_qua
 }
 
 
-
 #PLOT individual correlation over time
 ii = which(protist_tricho_labelC=="Tripos")
-ggplot(data=df_cor) + geom_line(aes_string(x="year",y=protist_tricho_labelC[ii]))+
-  scale_x_continuous(breaks=seq(2006,2023,2))+ylim(-1,1)+
+ggplot(data=df_cor) + geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]))+
+  geom_segment(aes_string(x="year",y=0,xend="year",yend=protist_tricho_labelC[ii]))+
+  geom_hline(aes(yintercept=0),color="black")+
+scale_x_continuous(breaks=seq(2006,2023,2))+ylim(-1,1)+
   ylab("Correlation Coefficient") +xlab("Year")+
   ggtitle(protist_tricho_labelC[ii])
+
+################
+#GUINARDIA VIGNETTE = STANDARD DEVIATON
+#############
+
+df_cor_long <-df_cor %>% gather(species,cor,-year) %>% drop_na() %>% 
+  filter(str_detect(species, "Guinardia"))
+
+
+aov_res <- aov(cor ~ species, data=df_cor_long) 
+
+aov_res%>% ggplot(aes(x = species, y = cor)) +
+  geom_boxplot(fill = "grey80", colour = "blue") +
+  scale_x_discrete() + xlab("Group") + ylab("Scores")+
+  geom_signif(comparisons = list(c("group_1", "group_2","group_3")), 
+              map_signif_level=TRUE)
 
 #add functional group column to cyclic index object
 c_index$func_group = "Unknown"
@@ -134,19 +152,25 @@ color_code = left_join(c_index[order(c_index$cyclicity_index,c_index$func_group)
 map_dict <- map$colors
 names(map_dict) <- map$func_group
 
+###################################################################################
 #plot c_index
-c_index %>% drop_na() %>%
-ggplot() + geom_bar(aes(x=reorder(species,+cyclicity_index),y=cyclicity_index,fill=func_group),
+##################################################################################
+c_index %>%
+ggplot() + geom_bar(aes(x=reorder(species,+cyclicity_index),
+                        y=cyclicity_index,
+                        fill=func_group),
                                 stat="identity")+
   scale_fill_manual(values=map_dict,name="Functional\nGroup")+
-  coord_flip()+ylim(0,1)+
+  coord_flip()+ylim(-0.05,1)+
   ylab("Cyclicity Index")+xlab("Species")+
   theme(axis.text.y = element_text(colour = color_code))
 
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot.png"),
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median.png"),
        width=1500,height=3000,units="px",dpi=200)
 
-####################
+#################################################################################
+# Standard Deviation Bar Plot
+#################################################################################
 ggplot(data=c_index) + geom_bar(aes(x=reorder(species,+sd),
                                     y=sd,
                                     fill=func_group),
@@ -191,7 +215,7 @@ ggplot() +
   geom_density(data=c_index[c_index$func_group=="Ciliate",],
                  aes(x=cyclicity_index,y=after_stat(count)/sum(after_stat(count)),
                      fill="Ciliate",color="Ciliate"),alpha=0.4)+
-  xlim(0,1)+
+  xlim(0,1)+ ylim(0,0.006)+ 
   xlab("Cyclicity Index (Median Correlation)") + ylab("Normalized Density") + 
   guides(fill=guide_legend(title="Functional Group"))+
   scale_color_manual(name="Functional Group",
@@ -199,7 +223,15 @@ ggplot() +
                      values = colors)+
   scale_fill_manual(name="Functional Group",
                      labels=c("Ciliate","Diatom","Dinoflagellate","Nano-Flag-Cocco"),
-                    values = colors)
+                    values = colors)+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    size = 0.75, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "gray"), 
+    panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "white")
+  )
 
 ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_cyclicity_index_median_quadroot_normalized.png"),
        width=1500,height=800,units="px",dpi=200)
@@ -242,7 +274,15 @@ ggplot() +
   scale_fill_manual(name="Functional Group",
                     labels=c("Ciliate","Diatom","Dinoflagellate","Nano-Flag-Cocco"),
                     values = colors)+
-  xlim(0,0.5)
+  xlim(0,0.5)+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    size = 0.75, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "gray"), 
+    panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "white")
+  )
 
 
 ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_standard_deviation_quadroot.png"),
@@ -288,11 +328,11 @@ df_carbonC_wyear_mean %>% filter(year==y) %>% ggplot() +
   geom_point(data=test,aes(x=week,Acantharia),shape=3,color="blue")
 
 
-
 #plot Annual Peak over Time
 
 ggplot(data = annual_peak) + geom_point(aes(x = year,y= Ephemera))
 
-
 ##########################################
+# Trip0s vignette
+#############################################
 

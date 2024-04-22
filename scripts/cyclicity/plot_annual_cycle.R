@@ -105,6 +105,8 @@ df_carbonC_wyear_mean <-df_carbonC %>% group_by(wyear) %>%
 
 df_carbonC_wyear_mean$year <- factor(df_carbonC_wyear_mean$year)
 
+
+save(df_carbonC_wyear_mean)
 ggplot(data=df_carbonC_wyear_mean) + geom_line(aes(x=week,y=Leptocylindrus,
                                          color = year)) +
   xlab("Week of Year") + ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"^(1/4)))+
@@ -152,11 +154,11 @@ i = 1
 ###########################################################################
 #
 ###################################################################################
+c_group_1 <- c("Chaetoceros_throndsenii","Chaetoceros_danicus","Chaetoceros_similis")
+c_group_2 <- c("Chaetoceros_tenuissimus","Chaetoceros_subtilis","Chaetoceros_socialis","Chaetoceros_didymus_merged","Chaetoceros_peruvianis")
+
 week_means %>%
-  select(c("Chaetoceros_tenuissimus","Chaetoceros_socialis",
-           "Chaetoceros_didymus_merged",
-           "Chaetoceros_peruvianis",
-           ,"week")) %>%
+  select(c(c_group_1,week)) %>%
   gather(key=species,value=carbon_conc,-c(week)) %>%
   ggplot() + geom_line(aes(x=week,y=carbon_conc^(1/4),color = species)) +
   xlab("Week of Year") +
@@ -164,7 +166,7 @@ week_means %>%
   scale_x_continuous(breaks=seq(0,53,4))
 
 week_means %>%
-  select(c("Chaetoceros_throndsenii","Chaetoceros_subtilis","Chaetoceros_danicus","Chaetoceros_similis","week")) %>%
+  select(c(c_group_2,week)) %>%
   gather(key=species,value=carbon_conc,-c(week)) %>%
   ggplot() + geom_line(aes(x=week,y=carbon_conc^(1/4),color = species)) +
   xlab("Week of Year") +
@@ -186,12 +188,24 @@ df_cor %>%  select(contains("Chaetoceros"),year,-Chaetoceros) %>%
   scale_x_continuous(breaks=seq(2006,2023,2))+
   xlab("Year") + ylab("Correlation")
 
+
 df_cor %>%
-  select(c("Chaetoceros_throndsenii","Chaetoceros_subtilis","Chaetoceros_danicus","Chaetoceros_similis","year")) %>%
+  select(c_group_1,year) %>%
   gather(key=species,value=corr,-c(year)) %>%
   ggplot() +
   geom_point(aes(x=year,y=corr,color=species,shape=species)) +
-  geom_smooth(aes(x=year,y=corr),method = "lm")+
+  geom_smooth(aes(x=year,y=corr),method = "gam")+
+  geom_hline(aes(yintercept=0),color="black",linetype="dashed")+
+  ylim(-1,1) +
+  scale_x_continuous(breaks=seq(2006,2023,2))+
+  xlab("Year") + ylab("Correlation")
+
+df_cor %>%
+  select(c_group_2,year) %>%
+  gather(key=species,value=corr,-c(year)) %>%
+  ggplot() +
+  geom_point(aes(x=year,y=corr,color=species,shape=species)) +
+  geom_smooth(aes(x=year,y=corr),method = "gam")+
   geom_hline(aes(yintercept=0),color="black",linetype="dashed")+
   ylim(-1,1) +
   scale_x_continuous(breaks=seq(2006,2023,2))+
@@ -199,16 +213,16 @@ df_cor %>%
 
 
 df_cor %>%
-  select(c("Chaetoceros_throndsenii","Chaetoceros_subtilis","Chaetoceros_danicus","Chaetoceros_similis","year")) %>%
-  gather(key=species,value=corr,-c(year)) %>%
-  ggplot() + geom_line(aes(x=year,y=corr,color=species)) +
+  select(contains("Chaetoceros"),year) %>%
+    gather(key=species,value=corr,-c(year)) %>%
+  ggplot() +
   geom_point(aes(x=year,y=corr,color=species,shape=species)) +
-  geom_smooth(aes(x=year,y=corr),method = "lm")+
+  geom_smooth(aes(x=year,y=corr),method = "gam")+
   geom_hline(aes(yintercept=0),color="black",linetype="dashed")+
-  ylim(-1,1) +
+  ylim(-0.5,1) +
+  scale_shape_manual(values=1:9) +
   scale_x_continuous(breaks=seq(2006,2023,2))+
-  xlab("Year") + ylab("Correlation")
-
+  xlab("Year") + ylab("Correlation Coefficient")
 
 
 ggsave(filename = paste0(basepath,"/figures/cyclic_index/chaetoceros_correlation_over_time.png"),
