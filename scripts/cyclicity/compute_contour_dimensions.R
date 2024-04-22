@@ -12,6 +12,7 @@ lapply(list.of.packages, require, character.only = TRUE)
 #COMPUTE CONTOUR LINES FOR ANNUAL PERIOD
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_03_df_carbonC_super_res.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
 
 #store dimensions of annual contours
 annual_lengths <- vector(length=length(super_res))
@@ -100,7 +101,6 @@ df_annual %>%group_by(func_group) %>%
 #complete bar plot 
 ####################################################################################
 #generating color codes
-df_annual = df_annual %>% select(-Thalassiosira_TAG_external_detritus)
 my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
 map <- data.frame(func_group=func_group_list,colors=my_colors)
 color_code = left_join(df_annual[order(df_annual$annual_duration,df_annual$func_group),],map,by="func_group")$colors
@@ -121,8 +121,7 @@ df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>%
   theme(axis.text.y = element_text(colour = color_code))
 
 ggsave(filename=paste0(basepath,"figures/annual_periodicity_bar_all.png"),
-       width=1500,height=3000,units="px",dpi=200)
-
+       width=2350,height=2800,units="px",dpi=300)
 
 ################################################################################
 # Bar plot only of complete taxa
@@ -163,7 +162,7 @@ annual_dims %>%
   mutate(species=factor(species,levels=unique(species))) %>% 
   ggplot() +
   geom_linerange(aes(x=species,
-                     ymin=xmin,ymax=xmax,color=func_group),linewidth=1)+
+                     ymin=xmin,ymax=xmax,color=func_group),linewidth=3)+
   coord_flip() + 
   ylab("Year") +
   xlab("Species")+
@@ -172,7 +171,7 @@ annual_dims %>%
                      labels=seq(2008,2008+14,2),limits=c(0,365*14))
 
 ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_line_range.png"),
-       width=1300,height=1000,units="px",dpi=200)
+       width=1500,height=1000,units="px",dpi=200)
 
 #################################################################################
 #compute contour dimensions for an INDIVIDUAL WAVELET

@@ -237,3 +237,7 @@ df_carbonC %>% select(contains("Tripos"),-contains("Dino"),date,year) %>%
   ggplot() + geom_line(aes(x=date,y=conc,color=species),alpha=0.7)+
   ggtitle("2023 Tripos Bloom")
 
+########################################################
+#diatom group high cyclicity
+##########################################################
+
