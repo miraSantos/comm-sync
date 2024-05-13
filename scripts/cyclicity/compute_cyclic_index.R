@@ -8,9 +8,9 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_19_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_19_df_carbonC.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_19_df_carbonC_filled.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 
 #add date time objects
 df_carbonC$doy_numeric <- yday(df_carbonC$date)
@@ -20,13 +20,13 @@ quadroot <- function(x){x^(1/4)}
 head(df_carbonC)
 
 #compute day of year and weekly means 
-doy_means <- df_carbonC %>% 
+doy_means_quadroot <- df_carbonC %>% 
   mutate_at(protist_tricho_labelC,quadroot) %>%
   group_by(doy_numeric) %>%
-  summarize_at(protist_tricho_labelC,mean,na.rm=T)
+  summarize_at(protist_tricho_labelC,\(x)mean(x,na.rm=T))
 
 #compute weekly mean
-week_means <- df_carbonC %>% 
+week_means_quadroot <- df_carbonC %>% 
   mutate_at(protist_tricho_labelC,quadroot) %>%
   group_by(week) %>%
   summarize_at(protist_tricho_labelC,mean,na.rm=T)
@@ -62,7 +62,7 @@ ref_year_interp <- df_carbonC_wyear_mean%>%
 
 
 #average weekly annual cycle across entire time series
-week_climatology = week_means %>% select(protist_tricho_labelC)
+week_climatology = week_means_quadroot %>% select(all_of(protist_tricho_labelC))
 
 #create dataframe to store correlations
 df_cor <- as.data.frame(matrix(nrow=0,ncol=length(protist_tricho_labelC)+1))
@@ -113,86 +113,14 @@ c_index = data.frame(cyclicity_index=c_index_median,sd=c_index_sd,
 c_index$species <- rownames(c_index)
 
 #add functional group column to cyclic index object
-c_index$func_group = "Unknown"
+c_index$func_group = "Other"
 #load ifcb class list file that categories each species in a functional group
-func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Unknown")
-func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nanoflagcocco_label,metazoan_label,c("Unknown"))
+func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Other")
+func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nfg_label,metazoan_label,c("Other"))
 #create column with functional group 
 for(func_group in 1:length(func_group_list)){
   reference=func_group_labels[[func_group]]
   c_index[c_index$species%in%reference,"func_group"] = func_group_list[func_group]
 }
 
-
-#PLOT individual correlation over time
-ii = which(protist_tricho_labelC=="Tripos")
-ggplot(data=df_cor) + geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]))+
-  geom_segment(aes_string(x="year",y=0,xend="year",yend=protist_tricho_labelC[ii]))+
-  geom_hline(aes(yintercept=0),color="black")+
-scale_x_continuous(breaks=seq(2006,2023,2))+ylim(-1,1)+
-  ylab("Correlation Coefficient") +xlab("Year")+
-  ggtitle(protist_tricho_labelC[ii])
-
-
-
-###################################################################################
-#plot c_index
-##################################################################################
-
-#for colorcoding text by functional group
-my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
-map <- data.frame(func_group=func_group_list,colors=my_colors)
-color_code = left_join(c_index[order(c_index$cyclicity_index,c_index$func_group),],map,by="func_group")$colors
-map_dict <- map$colors
-names(map_dict) <- map$func_group
-
-
-c_index %>%
-ggplot() + geom_bar(aes(x=reorder(species,+cyclicity_index),
-                        y=cyclicity_index,
-                        fill=func_group),
-                                stat="identity")+
-  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
-  coord_flip()+ylim(-0.05,1)+
-  ylab("Cyclicity Index")+xlab("Species")+
-  theme(axis.text.y = element_text(colour = color_code))
-
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median.png"),
-       width=1500,height=3000,units="px",dpi=200)
-
-#################################################################################
-# Standard Deviation Bar Plot
-#################################################################################
-ggplot(data=c_index) + geom_bar(aes(x=reorder(species,+sd),
-                                    y=sd,
-                                    fill=func_group),
-                                stat="identity")+
-  coord_flip()+
-  ylab("Standard Deviation")+xlab("Species")+
-  scale_fill_manual(values=map_dict,name="Functional\nGroup")
-
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_sd.png"),
-       width=1500,height=3000,units="px",dpi=200)
-
-############################
-#DTW
-#############################
-
-my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
-map <- data.frame(func_group=func_group_list,colors=my_colors)
-color_code = left_join(c_index[order(c_index$dtw,c_index$func_group),],map,by="func_group")$colors
-map_dict <- map$colors
-names(map_dict) <- map$func_group
-
-c_index %>% ggplot() +
-  geom_bar(aes(x=reorder(species,+dtw),y=dtw,fill=as.factor(func_group)),
-           stat="identity")+
-  coord_flip()+
-  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
-  xlab("dtw Distance") + ylab("Species")+
-  theme(axis.text.y = element_text(colour = color_code))
-
-
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_dtw.png"),
-       width=1500,height=3000,units="px",dpi=200)
-
+save(c_index,df_cor,file=paste0(basepath,"/data/r_objects/c_index_df_cor_2024_May_13.RData"))

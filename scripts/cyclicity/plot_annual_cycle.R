@@ -7,7 +7,7 @@ if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
 load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_17_df_carbonC.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_19_df_carbon_labels.RData"))
 
 df_carbonC$doy_numeric <- yday(df_carbonC$date)
 df_carbonC$week <- week(df_carbonC$date)
@@ -56,12 +56,19 @@ for (species in full_periodicity_list){
 ####################
 #plot individual
 #################
-ii = "Acantharia"
-df_carbonC  %>%
+ii = "Emiliania_huxleyi"
+ii = "Leptocylindrus"
+ii = "Tripos_fusus"
+
+df_carbonC_wyear_mean  %>%
   mutate_at(protist_tricho_labelC,quadroot) %>%
-  mutate(week=as.factor(week)) %>%
   ggplot() + 
-  geom_boxplot(aes_string(x="week",y=ii))
+  geom_line(aes_string(x="week",y=ii,color="year"))
+
+
+df_carbonC_wyear_mean %>% 
+  mutate_at(protist_tricho_labelC,quadroot) %>%
+  ggplot() + geom_point(aes_string(x="date",y=ii))
 
 plot(df_carbonC$date,df_carbonC$detritus^(1/4))
 

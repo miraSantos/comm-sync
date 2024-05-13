@@ -7,12 +7,15 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
+source(paste0(basepath,"/scripts/wavelet/adv_biwavelet_packages.R"))
+source(paste0(basepath,"/scripts/wavelet/plot_single_wt_arc.R"))
+
 ################################################################################
 ################################################################################
 #COMPUTE CONTOUR LINES FOR ANNUAL PERIOD
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
-load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_03_df_carbonC_super_res.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2023_Mar_26_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_26_df_carbonC_filled_super_res.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbon_labels.RData"))
 
 #store dimensions of annual contours
 annual_lengths <- vector(length=length(super_res))
@@ -31,9 +34,11 @@ for(wavelet in 1:length(super_res)){
   # extract contours at annual band
   annual_contours <- list()
   annual_contours_length <- vector(length=length(contour_pos))
-  #annual band
-  period_min = log2(100) #300 days
-  period_max = log2(500) #
+  #annual band period range
+  day_x0 = 300
+  day_x = 500
+  period_min = log2(day_x0) 
+  period_max = log2(day_x) 
   for(ii in 1:length(contour_pos)){
     annual_contours[[ii]] <- which((contour_pos[[ii]]$y > period_min) & (contour_pos[[ii]]$y < period_max))
     annual_contours_length[ii] <- length(annual_contours[[ii]])
@@ -48,6 +53,7 @@ for(wavelet in 1:length(super_res)){
   #loop through each polygon with annual if present
   if(length(annual_index > 0)){
     for(annual_i in 1:length(annual_index)){
+      #find range witihn countour
       range_i$y = range(contour_pos[[annual_index[annual_i]]]$y)
       range_i$x = range(contour_pos[[annual_index[annual_i]]]$x)
       xmin = range_i$x[1]
@@ -66,26 +72,27 @@ for(wavelet in 1:length(super_res)){
   annual_lengths[wavelet] <-wavelet_annual_length_sum
 }
 
-annual_dims <- annual_dims %>% mutate(xmin=as.numeric(xmin),xmax=as.numeric(xmax),func_group = "Unknown")
+annual_dims <- annual_dims %>% mutate(xmin=as.numeric(xmin),xmax=as.numeric(xmax),func_group = "Other")
 #store annual durations in dataframe with species and functional group labels
-df_annual = data.frame(annual_duration = annual_lengths,species=protist_tricho_labelC,func_group = "Unknown")
+df_annual = data.frame(annual_duration = annual_lengths,species=protist_tricho_labelC,func_group = "Other")
 
-annual_dims <- left_join(annual_dims,df_annual,by=c("species","func_group"))
 
 #load ifcb class list file that categories each species in a functional group
-func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Unknown")
-func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nanoflagcocco_label,metazoan_label,c("Unknown"))
+func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Other")
+func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nanoflagcocco_label,metazoan_label,c("Other"))
 #create column with functional group for df annual
 for(func_group in 1:length(func_group_list)){
 reference=func_group_labels[[func_group]]
 df_annual[df_annual$species%in%reference,"func_group"] = func_group_list[func_group]
 annual_dims[annual_dims$species%in%reference,"func_group"] = func_group_list[func_group]
 }
+annual_dims <- left_join(annual_dims,df_annual,by=c("species","func_group"))
 
 
 full_periodicity_list <- df_annual$species[which(df_annual$annual_duration==5109)]
-
-save(df_annual,annual_dims,full_periodicity_list,file=)
+full_periodicity_list
+save(df_annual,annual_dims,full_periodicity_list,
+     file=paste0(basepath,"/data/r_objects/df_annual_periodicity_contour.RData"))
 ################################################################################
 #bar chart
 ################################################################################
@@ -118,11 +125,18 @@ df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>%
   xlab("Species")+
   scale_y_continuous(breaks=seq(0,365*14,365*2),
                      labels=seq(0,14,2),limits=c(0,365*14))+
-  theme(axis.text.y = element_text(colour = color_code))
+  theme(axis.text.y = element_text(colour = color_code))+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    size = 0.75, linetype = "solid"),
+    panel.grid.major  = element_line(size = 0.25, linetype = 'solid',
+                                     colour = "gray"), 
+    panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "white")
+  )
 
-ggsave(filename=paste0(basepath,"figures/annual_periodicity_bar_all.png"),
-       width=2350,height=2800,units="px",dpi=300)
-
+ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_bar_all.png"),
+       width=1500,height=3000,units="px",dpi=200)
 ################################################################################
 # Bar plot only of complete taxa
 ################################################################################
@@ -148,7 +162,7 @@ df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>%
                      labels=seq(0,14,2),limits=c(0,365*14))+
   theme(axis.text.y = element_text(colour = color_code$colors))
 
-ggsave(filename=paste0(basepath,"figures/annual_periodicity_bar.png"),
+ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_bar.png"),
        width=1600,height=1600,units="px",dpi=200)
 
 
@@ -168,7 +182,15 @@ annual_dims %>%
   xlab("Species")+
   scale_color_manual(values=map_dict,name="Functional\nGroup") +
   scale_y_continuous(breaks=seq(0,365*14,365*2),
-                     labels=seq(2008,2008+14,2),limits=c(0,365*14))
+                     labels=seq(2008,2008+14,2),limits=c(0,365*14))+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    size = 0.75, linetype = "solid"),
+    panel.grid.major  = element_line(size = 0.25, linetype = 'solid',
+                                     colour = "gray"), 
+    panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "white")
+  )
 
 ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_line_range.png"),
        width=1500,height=1000,units="px",dpi=200)
@@ -178,54 +200,58 @@ ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_l
 #################################################################################
 head(annual_dims)
 
-
-annual_dims = data.frame(species=character(),xmin=numeric(),xmax=numeric())
-Colnames <- names(annual_dims)
-index = which(protist_tricho_labelC == "Guinardia_delicatula")
-plot.biwavelet_adv(super_res[[index]])
-wavelet = index
+wavelet = which(protist_tricho_labelC=="Emiliania_huxleyi")
+print(wavelet)
+#extract dimensions of contours
 x = super_res[[wavelet]]
-species=protist_tricho_labelC[wavelet]
+species = protist_tricho_labelC[wavelet]
+species
 yvals <- log2(super_res[[wavelet]]$period)
 tol = 1
+#extract contour lines
 contour_pos <- contourLines(x$t, yvals, t(x$signif), level = tol)
 
-annual_contours <- list() #length of wavelets
+# extract contours at annual band
+annual_contours <- list()
 annual_contours_length <- vector(length=length(contour_pos))
-
-#for each polygon within each wavelet object find which polygons are the annual ones
+#annual band period range
+day_x0 = 360
+day_x = 370
+period_min = log2(day_x0) 
+period_max = log2(day_x) 
 for(ii in 1:length(contour_pos)){
-  #store index in annual contours
-  annual_contours[[ii]] <- which((contour_pos[[ii]]$y > 8) & (contour_pos[[ii]]$y < 10))
-  #store lengths for each wavelet
+  annual_contours[[ii]] <- which((contour_pos[[ii]]$y > period_min) & (contour_pos[[ii]]$y < period_max))
   annual_contours_length[ii] <- length(annual_contours[[ii]])
 }
 
-annual_index = which(annual_contours_length !=0)
+#compute length of x and y dimensions for each annual band
+ranges = list()
 range_i = list()
+wavelet_annual_length_sum = 0
+annual_index = which(annual_contours_length !=0)
 
+#loop through each polygon with annual if present
 if(length(annual_index > 0)){
   for(annual_i in 1:length(annual_index)){
+    #find range witihn countour
     range_i$y = range(contour_pos[[annual_index[annual_i]]]$y)
     range_i$x = range(contour_pos[[annual_index[annual_i]]]$x)
     xmin = range_i$x[1]
     xmax = range_i$x[2]
     if((xmin > (365*14))|xmax<(365*2)){break}
-    #removing ranges to account for cone of influence
-    xmin = if_else(xmin <= 365*2,0,xmin)
+    #truncating ranges to account for cone of influence
+    xmin = if_else(xmin <= 365*2,1,xmin-(365*2))
     xmax = pmin(xmax,365*14)
     length_x = xmax-xmin
-    wavelet_annual_length = wavelet_annual_length + length_x
+    wavelet_annual_length_sum = wavelet_annual_length_sum + length_x
     annual_dims <- rbind(annual_dims, c(species,xmin,xmax))
     names(annual_dims) <- Colnames
   }
 }
+wavelet_annual_length_sum = pmin(wavelet_annual_length_sum,365*14-1)
+annual_lengths[wavelet] <-wavelet_annual_length_sum
 
-annual_lengths[wavelet] <-wavelet_annual_length
+wavelet
+protist_tricho_labelC[wavelet]
+plot.biwavelet_adv(super_res[[wavelet]])
 
-
-plot.biwavelet_adv(super_res[[index]])
-annual_dims[annual_dims$species=="Guinardia_delicatula",]
-
-###############################################
-################################################

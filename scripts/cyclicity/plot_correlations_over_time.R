@@ -4,8 +4,8 @@
 for(ii in 1:length(protist_tricho_labelC)){
   print(paste0(ii," of ",length(protist_tricho_labelC)))
   ggplot(data=df_cor) + geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]))+
-    geom_segment(aes_string(x="year",y=0,xend="year",yend=protist_tricho_labelC[ii]))+
-    geom_hline(aes(yintercept=0),color="black")+
+    geom_line(aes_string(x="year",y=protist_tricho_labelC[ii]))+
+    geom_hline(aes(yintercept=0),color="red")+
     scale_x_continuous(breaks=seq(2006,2023,2))+ylim(-1,1)+
     ylab("Correlation Coefficient") +xlab("Year")+
     ggtitle(protist_tricho_labelC[ii])

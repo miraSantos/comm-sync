@@ -155,8 +155,7 @@ plot_single_wt_arc<- function(df,res,title,save_folder,save_name,plot.phase=FALS
              ylab = ylab,
              yaxt = "n",
              xaxt = "n",
-             col = fill.colors,
-             main=title)
+             col = fill.colors)
   
   xlocs <- seq(1,length(x$t),365)
   axis(side=1,at=xlocs,labels=format(df$date[xlocs],form))
