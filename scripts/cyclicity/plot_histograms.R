@@ -10,7 +10,7 @@ if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
 
-load(paste0(basepath,"/data/r_objects/c_index_df_cor_2024)22_april.RData"))
+load(paste0(basepath,"/data/r_objects/c_index_df_cor_2024_May_13.RData"))
 
 ################################################################################
 #### HISTOGRAM of cyclity
@@ -26,13 +26,15 @@ map_dict <- map$colors
 names(map_dict) <- map$func_group
 
 
-#Unnormalized density plot
-c_index  %>% filter(species %in% opt_list_merged) %>% ggplot() +
-  geom_density(aes(cyclicity_index,fill=func_group,color=func_group),alpha=0.5)+
+#Unnormalized density plot of cyclicity index
+c_index  %>% filter(species %in% label_maybe_include) %>% ggplot() +
+  geom_density(aes(cyclicity_index,fill=func_group,color=func_group,linetype=func_group),alpha=0.5)+
   xlim(0,1)+  
   xlab("Cyclicity Index (Median Correlation)") + ylab("Normalized Density") + 
-  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
+  scale_fill_manual(values=map_dict)+
   scale_color_manual(values=map_dict,name="Functional\nGroup")+
+  scale_linetype_manual(values=c("twodash","solid","longdash","dotted","dashed"))+
+  labs(color  = "Functional\nGroup", linetype ="Functional\nGroup", fill = "Functional\nGroup")+
   theme(
     panel.background = element_rect(fill = "white", colour = "black",
                                     linewidth = 0.75, linetype = "solid"),
@@ -41,10 +43,14 @@ c_index  %>% filter(species %in% opt_list_merged) %>% ggplot() +
     panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                     colour = "white")
   )
+
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_cyclicity_index_median_quadroot_normalized",Sys.Date(),".png"),
+       width=1500,height=800,units="px",dpi=200)
+
 
 
 #ONLY SPECIES WITH INCLUDE TAG
-c_index  %>% filter(species %in% opt_list_include) %>% ggplot() +
+c_index  %>% filter(species %in% label_include) %>% ggplot() +
   geom_density(aes(cyclicity_index,fill=func_group,color=func_group),alpha=0.5)+
   xlim(0,1)+  
   xlab("Cyclicity Index (Median Correlation)") + ylab("Normalized Density") + 
@@ -58,6 +64,33 @@ c_index  %>% filter(species %in% opt_list_include) %>% ggplot() +
     panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                     colour = "white")
   )
+
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_cyclicity_index_median_quadroot_normalized_include_only_",Sys.Date(),".png"),
+       width=1500,height=800,units="px",dpi=200)
+
+
+
+#Unnormalized density plot of SD
+c_index  %>% filter(species %in% label_maybe_include) %>% ggplot() +
+  geom_density(aes(sd,fill=func_group,color=func_group,linetype=func_group),alpha=0.5)+
+  xlim(0,0.55)+  
+  xlab("Standard Deviation of Cyclicity Index") + ylab("Normalized Density") + 
+  scale_fill_manual(values=map_dict)+
+  scale_color_manual(values=map_dict,name="Functional\nGroup")+
+  scale_linetype_manual(values=c("twodash","solid","longdash","dotted","dashed"))+
+  labs(color  = "Functional\nGroup", linetype ="Functional\nGroup", fill = "Functional\nGroup")+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    linewidth = 0.75, linetype = "solid"),
+    panel.grid.major = element_line(linewidth = 0.25, linetype = 'solid',
+                                    colour = "gray"), 
+    panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
+                                    colour = "white")
+  )
+
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_SD_median_quadroot_normalized_",Sys.Date(),".png"),
+       width=1500,height=800,units="px",dpi=200)
+
 
 #normalized density
 hist_c_index

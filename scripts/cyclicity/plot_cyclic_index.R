@@ -38,6 +38,7 @@ ggplot(data=df_cor) + geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]
 ###################################################################################
 #plot c_index
 ##################################################################################
+func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Other")
 
 #for colorcoding text by functional group
 my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
@@ -83,12 +84,12 @@ bar_c_index_include_maybe <- c_index %>% filter(species %in% label_maybe_include
   )
 
 bar_c_index_include
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include.png"),
-       width=1500,height=2000,units="px",dpi=200)
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_",Sys.Date(),".png"),
+       width=1200,height=1500,units="px",dpi=200)
 
 bar_c_index_include_maybe
 
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median.png"),
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_",Sys.Date(),".png"),
        width=1500,height=3000,units="px",dpi=200)
 
 #################################################################################

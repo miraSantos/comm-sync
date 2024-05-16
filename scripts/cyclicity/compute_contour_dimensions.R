@@ -16,7 +16,7 @@ source(paste0(basepath,"/scripts/wavelet/plot_single_wt_arc.R"))
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_26_df_carbonC_filled_super_res.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbon_labels.RData"))
-
+load(paste0(basepath,"data/r_objects/unfilled/2023_May_13_df_carbonC_filled_super_res_morlet.RData"))
 #store dimensions of annual contours
 annual_lengths <- vector(length=length(super_res))
 annual_dims = data.frame(species=character(),xmin=numeric(),xmax=numeric())
@@ -79,7 +79,7 @@ df_annual = data.frame(annual_duration = annual_lengths,species=protist_tricho_l
 
 #load ifcb class list file that categories each species in a functional group
 func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Other")
-func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nanoflagcocco_label,metazoan_label,c("Other"))
+func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nfg_label,metazoan_label,c("Other"))
 #create column with functional group for df annual
 for(func_group in 1:length(func_group_list)){
 reference=func_group_labels[[func_group]]
@@ -92,7 +92,7 @@ annual_dims <- left_join(annual_dims,df_annual,by=c("species","func_group"))
 full_periodicity_list <- df_annual$species[which(df_annual$annual_duration==5109)]
 full_periodicity_list
 save(df_annual,annual_dims,full_periodicity_list,
-     file=paste0(basepath,"/data/r_objects/df_annual_periodicity_contour.RData"))
+     file=paste0(basepath,"/data/r_objects/df_annual_periodicity_contour_May_13.RData"))
 ################################################################################
 #bar chart
 ################################################################################
@@ -135,7 +135,7 @@ df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>%
                                     colour = "white")
   )
 
-ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_bar_all.png"),
+ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_bar_all_",Sys.Date(),".png"),
        width=1500,height=3000,units="px",dpi=200)
 ################################################################################
 # Bar plot only of complete taxa
@@ -172,7 +172,7 @@ annual_dims %>% filter(annual_duration <5109)
 #ANNUAL TIME RANGE PLOT
 ################################################################################
 annual_dims %>% 
-  filter(annual_duration<5109)%>%
+  filter(annual_duration.x<5109,species %in% label_maybe_include)%>%
   mutate(species=factor(species,levels=unique(species))) %>% 
   ggplot() +
   geom_linerange(aes(x=species,
@@ -192,7 +192,7 @@ annual_dims %>%
                                     colour = "white")
   )
 
-ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_line_range.png"),
+ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_line_range_",Sys.Date(),".png"),
        width=1500,height=1000,units="px",dpi=200)
 
 #################################################################################
