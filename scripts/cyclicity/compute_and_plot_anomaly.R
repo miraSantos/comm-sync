@@ -29,7 +29,7 @@ week_means <- df_env_merge %>%
   group_by(week) %>%
   summarize_at(c(label_maybe_include,"Beam_temperature_corrected"),mean,na.rm=T)
 ###################################################################
-#Compute cyclic index
+#Compute anomaly
 #############################################################
 #create complete week year index (will left join with dataframe later)
 week <- sprintf("%02d",seq(1,53,1))
@@ -50,24 +50,15 @@ df_merged_long <-full_join(week_means_long_merged,df_wyear_long,by=c("wyear","ta
   drop_na() %>% mutate(anomaly = mean_conc-conc)
 head(df_merged_long)
 
-save(df_merged_short,file=paste0(basepath,"/data/r_objects/df_anomaly_merged_short_",Sys.Date(),".RData"))
-save(df_merged_long,file=paste0(basepath,"/data/r_objects/df_anomaly_merged_long_",Sys.Date(),".RData"))
-
-
-#INDIVIDUAL PLOTS
-
-
-df_merged_long %>% ggplot() +
-  geom_point(data=df_merged[df_merged$taxa=="Paralia_sulcata",],aes(x=date,y=log10(anomaly))) +
-  geom_point(data=df_merged[df_merged$taxa=="Beam_temperature_corrected",],aes(x=date,y=anomaly),color="red") +
-  geom_hline(yintercept=0,color="red") + 
-  scale_x_date(date_breaks="1 year",date_labels = format("%Y"))
-
-
 df_merged_short <- df_merged_long %>%
   pivot_wider(names_from=taxa,values_from=anomaly,id_cols=c("wyear","week","date","year")) %>%
   arrange(date) %>% mutate(week=as.numeric(week))
 head(df_merged_short)
+
+
+save(df_merged_short,file=paste0(basepath,"/data/r_objects/df_anomaly_merged_short_",Sys.Date(),".RData"))
+save(df_merged_long,file=paste0(basepath,"/data/r_objects/df_anomaly_merged_long_",Sys.Date(),".RData"))
+
 
 df_merged_short %>% mutate_at(label_maybe_include,~log10(.x+1)) %>% ggplot() +
   geom_point(aes(x=week,y=Beam_temperature_corrected))+
@@ -168,26 +159,25 @@ df_merged_short %>% mutate(year=as.factor(year)) %>% ggplot() +
          width=1000,height=800,units="px",dpi=150)
 }
 quadroot <- function(x){x^(1/4)}
-
-for(taxa in label_maybe_include){
-  print(taxa)
-  min = -quadroot(abs(min(df_merged_short[,taxa],na.rm=T)))
-  max = quadroot(max(df_merged_short[,taxa],na.rm=T))
+taxa_i= "Acantharia"
+for(taxa_i in label_maybe_include){
+  print(taxa_i)
+  min = pmin(-quadroot(abs(min(df_merged_short$Beam_temperature_corrected,na.rm=T))),-quadroot(abs(min(df_merged_short[,taxa_i],na.rm=T))))
+  max = pmax(quadroot(abs(max(df_merged_short$Beam_temperature_corrected,na.rm=T))),quadroot(max(df_merged_short[,taxa_i],na.rm=T)))
   for(year_i in seq(2006,2023,1)){
     print(year_i)
-    df_merged_short %>% filter(year==year_i)%>%
-      mutate_at(label_maybe_include,quadroot) %>% ggplot() +
-      geom_hline(yintercept = 0,color="red")+
-      geom_point(aes_string(x="week",y=taxa),color='black')+
-      geom_point(aes_string(x="week",y="Beam_temperature_corrected"),color='green',
-                 shape=4,size=3)+
-      labs(x="week",y=paste(taxa,"Anomaly"))+
-      scale_x_continuous(breaks=seq(0,52,4))+
-      ggtitle(paste(year_i,taxa,"and Temperature"))+
-      ylim(min,max)+
-      scale_colour_manual(name = 'the colour', 
-                          values =c('black'='black','green'='green'), labels = c(taxa,"temp"))
-    ggsave(filename=paste0(basepath,"/figures/anomaly/yearly_species/",taxa,"/anomaly_",taxa,"_",year_i,".png"),
+    df_merged_short %>% filter(year==year_i) %>%
+      mutate_at(label_maybe_include,quadroot) %>% ggplot(aes(x=week)) + 
+      geom_hline(yintercept=0,color="blue")+
+      geom_point(aes_string(y=taxa_i))+
+      geom_point(aes(y=Beam_temperature_corrected),color="red",shape=4,size=5)+
+      scale_y_continuous(name="Quadroot Transformed Carbon Concentration Anomaly",limits=c(min,max),sec.axis=sec_axis(~.*1,name=expression("Temperature Anomaly ("*degree*"C)"))) +
+      theme(axis.title.y = element_text(color = "black"),
+        axis.title.y.right = element_text(color = "red"),
+        axis.text.y.right = element_text(colour = "red"))+
+      scale_x_continuous(breaks=seq(1,52,4))+
+       ggtitle(paste(year_i,taxa_i,"and Temperature"))
+    ggsave(filename=paste0(basepath,"/figures/anomaly/yearly_species/",taxa_i,"/anomaly_",taxa_i,"_",year_i,".png"),
            width=800,height=800,units="px",dpi=150)
   }
 }
