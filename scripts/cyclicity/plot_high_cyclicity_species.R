@@ -1,33 +1,73 @@
+basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
+list.of.packages <- c("RColorBrewer", "lubridate",
+                      "ggplot2","tibbletime","dplyr","tidyr","zoo","stringr",
+                      "ggsignif","plotly","dtw","scales","patchwork")
 
+#find new packages and install them. require all packages in list
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+lapply(list.of.packages, require, character.only = TRUE)
+
+load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
+load(paste0(basepath,"/data/r_objects/c_index_df_cor_2024_May_13.RData"))
+
+
+
+df_carbonC$week <- week(df_carbonC$date)
 week_means <- df_carbonC %>% 
   group_by(week) %>%
-  summarize_at(opt_list_merged,mean,na.rm=T)
+  summarize_at(protist_tricho_labelC,mean,na.rm=T)
 
 ##########################################
 # cyclity - diatoms high
 #############################################
 
-diatoms_list_include_maybe <- c_index %>% filter(species %in% opt_list_merged,cyclicity_index>=0.6,func_group=="Diatom") %>% 
+diatoms_list_include_maybe <- c_index %>% filter(species %in% label_maybe_include,cyclicity_index>=0.6,func_group=="Diatom") %>% 
   select(species) %>% unique()
-diatoms_list_include <- c_index %>% filter(species %in% opt_list_include,cyclicity_index>=0.6,func_group=="Diatom") %>% 
+diatoms_list_include <- c_index %>% filter(species %in% label_maybe_include,cyclicity_index>=0.6,func_group=="Diatom") %>% 
   select(species) %>% unique()
-diatoms_list$species
 
-dino_list_include_maybe <- c_index %>%  filter(species %in% opt_list_merged,cyclicity_index>=0.5,func_group=="Dinoflagellate") %>% 
+dino_list_include_maybe <- c_index %>%  filter(species %in% label_maybe_include,cyclicity_index>=0.5,func_group=="Dinoflagellate") %>% 
   select(species) %>% unique()
-dino_list_include <- c_index %>%  filter(species %in% opt_list_merged,cyclicity_index>=0.5,func_group=="Dinoflagellate") %>% 
+dino_list_include <- c_index %>%  filter(species %in% label_maybe_include,cyclicity_index>=0.5,func_group=="Dinoflagellate") %>% 
   select(species) %>% unique()
-dino_list$species
+
+high_c_index <- c_index %>%  filter(species %in% label_maybe_include,cyclicity_index>=0.7) %>% 
+  select(species) %>% unique()
 
 week_means %>% 
-  select(diatoms_list_include$species,"week") %>%
+  select(high_c_index$species,"week") %>%
   gather(key="species",value="conc",-c(week)) %>%
   ggplot() + 
   geom_line(aes(x=week,y=conc,color=species)) +
   geom_point(aes(x=week,y=conc,color=species,shape=species)) +
   geom_smooth(aes(x=week,y=conc),method = "",color="black",label="Loess Mean")+
   labs(color = "Species",shape="Species")+
-  scale_shape_manual(values=1:length(diatoms_list$species)) +
+  scale_shape_manual(values=1:length(high_c_index$species)) +
+  xlab("Week")+
+  scale_y_sqrt(label=comma)+
+  scale_x_continuous(breaks=seq(0,53,4)) + 
+  ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"))+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    size = 0.75, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "gray"), 
+    panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "gray")
+  )
+
+week_means %>% 
+  select(diatoms_list_include_maybe$species,"week") %>%
+  gather(key="species",value="conc",-c(week)) %>%
+  ggplot() + 
+  geom_line(aes(x=week,y=conc,color=species)) +
+  geom_point(aes(x=week,y=conc,color=species,shape=species)) +
+  geom_smooth(aes(x=week,y=conc),method = "",color="black",label="Loess Mean")+
+  labs(color = "Species",shape="Species")+
+  scale_shape_manual(values=1:length(diatoms_list_include_maybe$species)) +
   xlab("Week")+
   scale_y_sqrt(label=comma)+
   scale_x_continuous(breaks=seq(0,53,4)) + 

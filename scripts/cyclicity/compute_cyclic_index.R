@@ -32,7 +32,8 @@ week_means_quadroot <- df_carbonC %>%
   summarize_at(protist_tricho_labelC,mean,na.rm=T)
 
 df_carbonC$year <- year(df_carbonC$date)
-df_carbonC$wyear <- paste0(df_carbonC$week,"-",df_carbonC$year)
+df_carbonC$wyear <- paste0(df_carbonC$
+                             week,"-",df_carbonC$year)
 #compute mean at every week year
 
 df_carbonC_wyear_mean <-df_carbonC %>% group_by(wyear) %>%
@@ -72,7 +73,7 @@ names(df_dtw) <- c("year",protist_tricho_labelC)
 annual_peak <- as.data.frame(matrix(NaN,nrow = 0,ncol=length(protist_tricho_labelC)+1))
 names(annual_peak) <- c("year",protist_tricho_labelC)
 
-#loop through the years and store colreation
+#loop through the years and store correlation
 for(y in 1:length(years)){
   print(years[y])
   dtw_distance = rep(NA,times=length(protist_tricho_labelC))
@@ -122,5 +123,12 @@ for(func_group in 1:length(func_group_list)){
   reference=func_group_labels[[func_group]]
   c_index[c_index$species%in%reference,"func_group"] = func_group_list[func_group]
 }
+
+c_index_syn$func_group = c("Other","Other")
+
+c_index = c_index %>% select(cyclicity_index,sd,species,func_group)
+
+c_index_merged = rbind(c_index,c_index_syn)
+
 
 save(c_index,df_cor,file=paste0(basepath,"/data/r_objects/c_index_df_cor_2024_May_13.RData"))

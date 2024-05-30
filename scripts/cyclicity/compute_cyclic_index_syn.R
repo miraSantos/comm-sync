@@ -63,8 +63,8 @@ ref_year_interp_syn <- df_syn_wyear_mean%>%
 week_climatology_syn = week_means_syn %>% select(all_of(cols))
 
 #create dataframe to store correlations
-df_cor <- as.data.frame(matrix(nrow=0,ncol=length(cols)+1))
-names(df_cor) <- c("year",cols)
+df_cor_syn <- as.data.frame(matrix(nrow=0,ncol=length(cols)+1))
+names(df_cor_syn) <- c("year",cols)
 annual_peak <- as.data.frame(matrix(NaN,nrow = 0,ncol=length(cols)+1))
 names(annual_peak) <- c("year",cols)
 #loop through the years and store colreation
@@ -75,22 +75,24 @@ for(y in year){
   #extract diagonal of the correlation matrix
   t= diag(cor(week_climatology_syn,individual_year))
   #append to dataframe
-  df_cor <- rbind(df_cor,as.data.frame(t(c(year=y,t))))
+  df_cor_syn <- rbind(df_cor_syn,as.data.frame(t(c(year=y,t))))
   annual_peak <- rbind(annual_peak,c(year=y,sapply(individual_year, max, na.rm = TRUE)))
   t=NA
 }
-names(df_cor) <- c("year",cols)
+names(df_cor_syn) <- c("year",cols)
 
 #take mean of cyclic index
-c_index_syn = colMeans(abs((df_cor[cols])))
-c_index_syn = data.frame(c_index_syn)
-c_index_syn$species <- rownames(c_index_syn)
+c_index_syn = colMeans(abs((df_cor_syn[cols])))
+c_index_sd <- apply(df_cor_syn[,c("euk_biovol_perml","syn_biovol_perml")], 2, sd,na.rm=T)
+
+c_index_syn = data.frame(cyclicity_index = c_index_syn, sd= c_index_sd)
+c_index_syn$species <- c("Picoeuks","Synechococcus")
 head(c_index_syn)
 
 #plot correlation over time for each species
 for(ii in 1:length(cols)){
   print(paste0(ii," of ",length(cols)))
-  ggplot(data=df_cor) + geom_line(aes_string(x="year",y=cols[ii]))+
+  ggplot(data=df_cor_syn) + geom_line(aes_string(x="year",y=cols[ii]))+
     geom_point(aes(x={{year}},y=cols[ii]))+
     scale_x_continuous(breaks=seq(min(df$year),max(df$year),2))+ylim(-1,1)+
     ylab("Correlation Coefficient") +xlab("Year")+

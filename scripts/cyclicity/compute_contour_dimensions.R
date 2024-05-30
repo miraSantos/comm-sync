@@ -137,6 +137,27 @@ df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>%
 
 ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_bar_all_",Sys.Date(),".png"),
        width=1500,height=3000,units="px",dpi=200)
+
+head(df_annual)
+
+df_annual_pie <- df_annual %>% mutate(pie = case_when(annual_duration==5109 ~ "Full",
+                                     (annual_duration<5109 & annual_duration>0) ~ "Partial",
+                                     annual_duration==0 ~ "None"))  %>% 
+  group_by(pie) %>% # Variable to be transformed
+  count() %>% 
+  ungroup() %>% 
+  mutate(perc = `n` / sum(`n`)) %>% 
+  arrange(perc) %>%
+  mutate(labels = scales::percent(perc))
+
+
+ggplot(df_annual_pie, aes(x = "", y = perc, fill = pie)) +
+  geom_col() +
+  geom_text(aes(label = labels),
+            position = position_stack(vjust = 0.5)) +
+  coord_polar(theta = "y")+theme_void()+
+  guides(fill = guide_legend(title = "Periodicity")) 
+  
 ################################################################################
 # Bar plot only of complete taxa
 ################################################################################
