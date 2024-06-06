@@ -10,6 +10,7 @@ lapply(list.of.packages, require, character.only = TRUE)
 ############# upload quality control
 #note df_stat_updated comes from a google sheet called optthresh
 opt_thresh <- read.table(paste0(basepath,"data/df_stat_updated.tsv"),sep="\t",header =T)
+load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 
 
 index_maybe_include = which(opt_thresh$Updated.Status %in% c("maybe","include"))

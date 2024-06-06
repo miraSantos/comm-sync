@@ -11,8 +11,8 @@ source(paste0(basepath,"/scripts/wavelet/plot_single_wt_arc.R"))
 
 rm(wt) #replaces wt with the correct biwavelet version (there are 2 versions)
 
-load(paste0(basepath,"data/r_objects/unfilled/2024_May_13_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024_May_13_df_carbonC_filled.RData"))
+load(paste0(basepath,"data/r_objects/2024-06-05_df_carbon_labels.RData"))
+load(paste0(basepath,"/data/r_objects/filled/2024-06-05_df_carbonC_filled_merged.RData"))
 
 super_res <-list()
 
@@ -26,7 +26,22 @@ super_res[[i]]<-res
 }
 
 save(df_carbonC_filled,super_res,
-     file=paste0(basepath,"data/r_objects/unfilled/2023_Apr_26_df_carbonC_filled_super_res_paul.RData"))
+     file=paste0(basepath,"data/r_objects/",Sys.Date(),"_df_carbonC_filled_super_res_paul.RData"))
+
+super_res <-list()
+
+#PAUL WAVELET
+for(i in 1:length(protist_tricho_label_merged)){
+  print(paste(i,"of",length(protist_tricho_label_merged)))
+  time_index = seq(1,nrow(df_carbonC_filled),1)
+  dat = as.matrix(cbind(time_index,df_carbonC_filled[protist_tricho_label_merged[i]]^(1/4)))
+  res= wt_arc(dat,mother="paul")
+  super_res[[i]]<-res
+}
+
+save(df_carbonC_filled,super_res,protist_tricho_label_merged,
+     file=paste0(basepath,"data/r_objects/",Sys.Date(),"_df_carbonC_filled_merged_super_res_paul.RData"))
+
 
 #MORLET WAVELET
 for(i in 1:length(protist_tricho_labelC)){
@@ -39,6 +54,20 @@ for(i in 1:length(protist_tricho_labelC)){
   
   save(df_carbonC_filled,super_res,
        file=paste0(basepath,"data/r_objects/unfilled/2023_May_13_df_carbonC_filled_super_res_morlet.RData"))
+  
+  
+#MORLET INCLUDING SYN AND EUKS
+  for(i in 1:length(protist_tricho_label_merged)){
+    print(paste(i,"of",length(protist_tricho_label_merged)))
+    time_index = seq(1,nrow(df_carbonC_filled),1)
+    dat = as.matrix(cbind(time_index,df_carbonC_filled[protist_tricho_label_merged[i]]^(1/4)))
+    res= wt_arc(dat,mother="morlet")
+    super_res[[i]]<-res
+  }
+  
+  save(df_carbonC_filled,super_res,protist_tricho_label_merged,
+       file=paste0(basepath,"data/r_objects/",Sys.Date(),"_df_carbonC_filled_merged_super_res_morlet.RData"))
+  
 ####################### compute individual wavelet
 #find index of deseired species 
 i = which(protist_tricho_labelC=="Tripos")

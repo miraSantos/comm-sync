@@ -8,15 +8,17 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbonC.RData"))
+
+
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
-load(paste0(basepath,"/data/r_objects/c_index_df_cor_2024_May_13.RData"))
+load(paste0(basepath,"/data/r_objects/c_index_merged_df_cor_2024-06-05.RData"))
 
 ####################################################
 #PLOT individual correlation over time
 ###############################################3
-ii = which(protist_tricho_labelC=="Emiliania_huxleyi")
+ii = which(protist_tricho_labelC=="Acantharia")
 ggplot(data=df_cor) + geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]))+
   geom_segment(aes_string(x="year",y=0,xend="year",yend=protist_tricho_labelC[ii]))+
   geom_hline(aes(yintercept=0),color="black")+

@@ -2,7 +2,8 @@
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 list.of.packages <- c("biwavelet","RColorBrewer", "lubridate",
                       "fields","ggplot2","tibbletime","dplyr","sets",
-                      "reshape2","ggformula","tidyr","moments","grDevices","rlist","rapport","forcats")
+                      "reshape2","ggformula","tidyr","moments","grDevices",
+                      "rlist","rapport","forcats")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
@@ -14,9 +15,11 @@ source(paste0(basepath,"/scripts/wavelet/plot_single_wt_arc.R"))
 ################################################################################
 #COMPUTE CONTOUR LINES FOR ANNUAL PERIOD
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
-load(paste0(basepath,"data/r_objects/unfilled/2023_Apr_26_df_carbonC_filled_super_res.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2023_May_13_df_carbonC_filled_super_res_morlet.RData"))
+
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
+load(paste0(basepath,"data/r_objects/2024-06-05_df_carbonC_filled_merged_super_res_morlet.RData"))
 #store dimensions of annual contours
 annual_lengths <- vector(length=length(super_res))
 annual_dims = data.frame(species=character(),xmin=numeric(),xmax=numeric())
@@ -92,7 +95,7 @@ annual_dims <- left_join(annual_dims,df_annual,by=c("species","func_group"))
 full_periodicity_list <- df_annual$species[which(df_annual$annual_duration==5109)]
 full_periodicity_list
 save(df_annual,annual_dims,full_periodicity_list,
-     file=paste0(basepath,"/data/r_objects/df_annual_periodicity_contour_May_13.RData"))
+     file=paste0(basepath,"/data/r_objects/df_annual_periodicity_contour",Sys.Date(),".RData"))
 ################################################################################
 #bar chart
 ################################################################################

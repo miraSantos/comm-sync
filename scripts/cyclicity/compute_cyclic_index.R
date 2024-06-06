@@ -8,9 +8,10 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
+load(paste0(basepath,"/data/r_objects/2024-06-04_df_carbonC_filled_super_res_paul.RData"))
 
 #add date time objects
 df_carbonC$doy_numeric <- yday(df_carbonC$date)
@@ -124,11 +125,11 @@ for(func_group in 1:length(func_group_list)){
   c_index[c_index$species%in%reference,"func_group"] = func_group_list[func_group]
 }
 
+
 c_index_syn$func_group = c("Other","Other")
 
-c_index = c_index %>% select(cyclicity_index,sd,species,func_group)
-
-c_index_merged = rbind(c_index,c_index_syn)
+c_index_merged = rbind(c_index[,c("cyclicity_index","sd","species","func_group")],c_index_syn)
 
 
-save(c_index,df_cor,file=paste0(basepath,"/data/r_objects/c_index_df_cor_2024_May_13.RData"))
+save(c_index,df_cor,file=paste0(basepath,"/data/r_objects/c_index_df_cor_",Sys.Date(),".RData"))
+save(c_index_merged,df_cor,file=paste0(basepath,"/data/r_objects/c_index_merged_df_cor_",Sys.Date(),".RData"))

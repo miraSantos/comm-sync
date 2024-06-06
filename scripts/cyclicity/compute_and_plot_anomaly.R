@@ -10,8 +10,9 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbonC.RData"))
+
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 
 load(paste0(basepath,"/data/r_objects/df_env_2024-05-28.RData"))
