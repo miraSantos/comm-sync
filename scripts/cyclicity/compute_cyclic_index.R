@@ -8,8 +8,9 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbonC.RData"))
+
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-12_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-12_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 load(paste0(basepath,"/data/r_objects/2024-06-04_df_carbonC_filled_super_res_paul.RData"))
 
@@ -48,10 +49,12 @@ df_carbonC_wyear_mean$year <- factor(df_carbonC_wyear_mean$year)
 #############################################################
 #create complete week year index (will left join with dataframe later)
 week <- seq(1,53,1)
-years <- seq(min(df_carbonC$year),max(df_carbonC$year),1)
+years <- seq(2006,max(df_carbonC$year)-1,1)
 week_list <- rep(week,length(years))
 year_list <- rep(years,53)[order(rep(years,53))]
-dfweek <- data.frame(wyear=paste0(week_list,"-",year_list),week=week_list,year=as.factor(year_list))
+dfweek <- data.frame(wyear=paste0(week_list,"-",year_list),
+                     week=week_list,
+                     year=as.factor(year_list))
 
 #approximate annual cycle with interpolation 
 ref_year_interp <- df_carbonC_wyear_mean%>%
@@ -60,8 +63,7 @@ ref_year_interp <- df_carbonC_wyear_mean%>%
   group_by(year) %>%
   mutate_at(protist_tricho_labelC,
             list(~na.approx(object=.,x=week,xout=seq(1,53,1),
-                            rule=2,ties=mean,method="linear"))) 
-
+                            rule=2,ties=mean,method="linear")))
 
 #average weekly annual cycle across entire time series
 week_climatology = week_means_quadroot %>% select(all_of(protist_tricho_labelC))
@@ -114,22 +116,15 @@ c_index = data.frame(cyclicity_index=c_index_median,sd=c_index_sd,
                      dtw = c_index_median_dtw)
 c_index$species <- rownames(c_index)
 
+
 #add functional group column to cyclic index object
-c_index$func_group = "Other"
 #load ifcb class list file that categories each species in a functional group
-func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Other")
-func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nfg_label,metazoan_label,c("Other"))
+func_group_list = c("Diatom","Dinoflagellate","Ciliate","Misc. Nanoplankton","Metazoan","Synechococcus","Picoeukaryotes")
+func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nfg_label,metazoan_label,c("Synechococcus"),c("Pico_eukaryotes"))
 #create column with functional group 
 for(func_group in 1:length(func_group_list)){
   reference=func_group_labels[[func_group]]
   c_index[c_index$species%in%reference,"func_group"] = func_group_list[func_group]
 }
 
-
-c_index_syn$func_group = c("Other","Other")
-
-c_index_merged = rbind(c_index[,c("cyclicity_index","sd","species","func_group")],c_index_syn)
-
-
-save(c_index,df_cor,file=paste0(basepath,"/data/r_objects/c_index_df_cor_",Sys.Date(),".RData"))
-save(c_index_merged,df_cor,file=paste0(basepath,"/data/r_objects/c_index_merged_df_cor_",Sys.Date(),".RData"))
+save(c_index,df_cor,func_group_list,file=paste0(basepath,"/data/r_objects/c_index_df_cor_",Sys.Date(),".RData"))

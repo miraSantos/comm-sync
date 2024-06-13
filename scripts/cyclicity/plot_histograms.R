@@ -20,7 +20,6 @@ set.seed(7)
 
 
 my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
-func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Other")
 map <- data.frame(func_group=func_group_list,colors=my_colors)
 map_dict <- map$colors
 names(map_dict) <- map$func_group

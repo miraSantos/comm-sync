@@ -3,7 +3,7 @@
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 list.of.packages <- c("RColorBrewer", "lubridate",
                       "ggplot2","tibbletime","dplyr","tidyr","zoo","stringr",
-                      "ggsignif","plotly","dtw","scales","patchwork")
+                      "ggsignif","plotly","rlang","dtw","scales","patchwork")
 
 #find new packages and install them. require all packages in list
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -14,6 +14,8 @@ lapply(list.of.packages, require, character.only = TRUE)
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbon_labels.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
+load(paste0(basepath,"/data/r_objects/c_index_merged_df_cor_2024-06-05.RData"))
+
 
 load(paste0(basepath,"/data/r_objects/df_env_2024-05-28.RData"))
 
@@ -48,10 +50,11 @@ df_wyear_long <- df_merge_wyear_mean %>% gather(key="taxa",value="conc",-c("week
 head(week_means_long_merged)
 head(df_wyear_long)
 df_merged_long <-full_join(week_means_long_merged,df_wyear_long,by=c("wyear","taxa","week","year")) %>% 
-  drop_na() %>% mutate(anomaly = mean_conc-conc)
+  drop_na() %>% mutate(anomaly = conc-mean_conc)
 head(df_merged_long)
 
-df_merged_short <- df_merged_long %>%
+#create short version
+df_merged_short_anomaly <- df_merged_long %>%
   pivot_wider(names_from=taxa,values_from=anomaly,id_cols=c("wyear","week","date","year")) %>%
   arrange(date) %>% mutate(week=as.numeric(week))
 head(df_merged_short)
@@ -61,12 +64,15 @@ save(df_merged_short,file=paste0(basepath,"/data/r_objects/df_anomaly_merged_sho
 save(df_merged_long,file=paste0(basepath,"/data/r_objects/df_anomaly_merged_long_",Sys.Date(),".RData"))
 
 
+
+
+#plot week by taxa and temperature
 df_merged_short %>% mutate_at(label_maybe_include,~log10(.x+1)) %>% ggplot() +
   geom_point(aes(x=week,y=Beam_temperature_corrected))+
   geom_point(aes_string(x="week",y=label_maybe_include[1]),color="green")
 
+#plot individual anomaly 
 taxa = "Acantharia"
-
 df_merged_short %>% ggplot() +
   geom_point(aes_string(x="date",y=taxa))+
   labs(x="Date",y=paste(taxa,"Anomaly"))+
@@ -83,72 +89,148 @@ df_merged_short %>% ggplot() +
 
 year=2009
 
+df_merged_short_anomaly <- df_merged_short_anomaly %>% mutate(month=month(date)) %>%
+  mutate(season = if_else(month %in% c(6,7,8),"JJA",if_else(month %in% c(12,1,2),"DJF",
+                                                            if_else(month %in% c(3,4,5),"MAM",
+                                                                    if_else(month %in% c(9,10,11),"SON",
+                                                                            "Other")))))
 
-#################################################################################
-###################################################################################
-#create complete week year index (will left join with dataframe later)
-week <- seq(1,53,1)
+df_merged_short %>% mutate(Sign = if_else(Beam_temperature_corrected >= 0, "Positive", "Negative")) %>%
+ggplot(aes_string(x="date",y="Beam_temperature_corrected")) +
+  geom_line(show.legend = FALSE)+
+  # geom_area(aes(fill=Sign), alpha = 0.8,position="identity",show.legend = FALSE)+
+  scale_fill_manual(values=c("blue","red"))+
+  scale_color_manual(values=c("blue","red"))+
+  labs(x="Date",y=expression("Temperature Anomaly ("*degree*"C)"))+
+  geom_hline(yintercept = 0,color="black")+
+  scale_x_date(date_breaks="1 year",date_labels=format("%Y"))
 
-years <- seq(min(df_carbonC$year),max(df_carbonC$year),1)
-week_list <- rep(week,length(years))
-year_list <- rep(years,53)[order(rep(years,53))]
-dfweek <- data.frame(wyear=paste0(week_list,"-",year_list),week=week_list,year=as.factor(year_list))
-
-#approximate annual cycle with interpolation 
-ref_year_interp <- df_carbonC_wyear_mean%>%
-  mutate_at(protist_tricho_labelC,quadroot) %>%
-  left_join(dfweek,.,by=c("wyear","week","year"))%>%
-  group_by(year) %>%
-  mutate_at(protist_tricho_labelC,
-            list(~na.approx(object=.,x=week,xout=seq(1,53,1),
-                            rule=2,ties=mean,method="linear"))) 
+df_merged_short %>% 
+  mutate(Sign = if_else(Beam_temperature_corrected >= 0, "Positive", "Negative")) %>%
+ggplot(aes(date,Beam_temperature_corrected, ymin = 0,ymax = Beam_temperature_corrected,
+                               color = Sign)) +
+  scale_color_manual(values=c("blue","red"))+
+  geom_linerange(stat = "identity",
+                position = "identity",size=0.5,show.legend = F)+
+  labs(x="Date",y=expression("Temperature Anomaly ("*degree*"C)"))+
+  scale_x_date(date_breaks="1 year",date_labels=format("%Y"))
 
 
-#average weekly annual cycle across entire time series
-week_climatology = week_means_quadroot %>% select(all_of(protist_tricho_labelC))
+ggsave(filename=paste0(basepath,"/figures/temperature_anomaly_",Sys.Date(),".png"),
+       width=1500,height=800,units="px",dpi=150)
 
-#create dataframe to store correlations
-df_cor <- as.data.frame(matrix(nrow=0,ncol=length(protist_tricho_labelC)+1))
-df_dtw <- as.data.frame(matrix(nrow=0,ncol=length(protist_tricho_labelC)+1))
-names(df_cor) <- c("year",protist_tricho_labelC)
-names(df_dtw) <- c("year",protist_tricho_labelC)
-annual_peak <- as.data.frame(matrix(NaN,nrow = 0,ncol=length(protist_tricho_labelC)+1))
-names(annual_peak) <- c("year",protist_tricho_labelC)
 
-#loop through the years and store correlation
-for(y in 1:length(years)){
-  print(years[y])
-  dtw_distance = rep(NA,times=length(protist_tricho_labelC))
-  #extract week year means of a specific year
-  individual_year <- ref_year_interp %>% ungroup() %>% filter(year == years[y]) %>% select(protist_tricho_labelC)
-  #extract diagonal of the correlation matrix
-  correlation= diag(cor(week_climatology,individual_year))
-  for(i in 1:length(protist_tricho_labelC)){
-    dtw_distance[i] <- dtw(individual_year[,i],week_climatology[,i])$normalizedDistance
-  } 
-  append_this_cor <- as.data.frame(t(c(year=years[y],correlation)))
-  append_this_dtw <- as.data.frame(t(c(year=years[y],dtw_distance)))
-  #append to dataframe
-  df_cor <- rbind(df_cor,append_this_cor)
-  df_dtw <- rbind(df_dtw,append_this_dtw)
-  annual_peak <- rbind(annual_peak,c(year=years[y],sapply(individual_year, max, na.rm = TRUE)))
+season_i = "MAM"
+df_merged_short %>% mutate(Sign = if_else(Beam_temperature_corrected >= 0,
+                                          "Positive", "Negative"))%>%
+  filter(season==season_i) %>%
+  ggplot(aes( ymin = 0,color = Sign)) +
+  facet_grid(cols=vars(year))+
+  scale_color_manual(values=c("blue","red"))+
+  geom_linerange(aes_string("week","Beam_temperature_corrected",
+                            ymax = "Beam_temperature_corrected"),stat = "identity",
+                 position = "identity",size=0.5,show.legend = F)+
+  labs(x="Week",y=expression("Temperature Anomaly ("*degree*"C)"))+
+  ggtitle(paste(season_i,"Anomaly"))
+
+
+#plot species anomaly
+taxa = "Ditylum_brightwellii"
+df_merged_short %>% mutate(Sign = if_else(!!sym(taxa)>= 0, "Positive", "Negative"))%>%
+  ggplot(aes( ymin = 0,color = Sign)) +
+  scale_color_manual(values=c("blue","red"))+
+  geom_linerange(aes_string("date",taxa,
+                            ymax = taxa),stat = "identity",
+                 position = "identity",size=0.5,show.legend = F)+
+  labs(x="Week",y=paste(taxa,"Concentration"))+
+  ggtitle(paste(taxa,"Anomaly"))
+
+taxa = "Ditylum_brightwellii"
+df_merged_short %>% mutate(Sign = if_else(!!sym(taxa)>= 0, "Positive", "Negative"))%>%
+  filter(season==season_i) %>%
+  ggplot(aes( ymin = 0,color = Sign)) +
+  facet_grid(cols=vars(year))+
+  scale_color_manual(values=c("blue","red"))+
+  geom_linerange(aes_string("week",taxa,
+                            ymax = taxa),stat = "identity",
+                 position = "identity",size=0.5,show.legend = F)+
+  labs(x="Week",y=paste(taxa,"Concentration"))+
+  ggtitle(paste(taxa, season_i,"Anomaly"))
+
+
+df_merged_short_anomaly %>% mutate(diatom = rowSums(across(diatoms_list_include_maybe$species))) %>%
+  filter(season=="DJF") %>%
+  ggplot() +
+  geom_hline(yintercept=0,color="red")+
+  geom_vline(xintercept=0,color="red")+
+  geom_point(aes_string(x="Beam_temperature_corrected",y="diatom")) +
+  labs(x="Temperature Anomaly",y=paste("Diatom","Anomaly"))+
+  geom_smooth(aes_string(x="Beam_temperature_corrected",y="diatom"),method="gam")
+
+cor(df_merged_short_anomaly$Beam_temperature_corrected,df_merged_short_anomaly$Acantharia)
+
+
+df_merged_short %>%
+  mutate(diatom = rowSums(across(diatoms_list_include_maybe$species))) %>%
+  mutate(Sign = if_else(diatom>= 0, "Positive", "Negative"))  %>% filter(Sign!="NA") %>%ggplot() +
+  geom_boxplot(aes(x=Sign,y=diatom)) +
+  labs(x="Temperature Anomaly",y=paste("Diatom","Anomaly"))+
+  geom_signif(aes(x=Sign,y=diatom),
+              comparisons=list(c("Negative","Positive")))
+
+
+df_merged_short %>% mutate(dino = rowSums(across(dino_list_include_maybe$species))) %>% ggplot() +
+  geom_hline(yintercept=0,color="red")+
+  geom_vline(xintercept=0,color="red")+
+  geom_point(aes_string(x="Beam_temperature_corrected",y="dino")) +
+  labs(x="Temperature Anomaly",y=paste("Dinoflagellate","Anomaly"))
+
+
+df_merged_short %>%
+  mutate(dino = rowSums(across(dino_list_include_maybe$species))) %>%
+  mutate(Sign = if_else(dino>= 0, "Positive", "Negative")) %>%
+  filter(Sign!="NA") %>%
+  ggplot() +
+  geom_boxplot(aes_string(x="Sign",y="dino")) +
+  labs(x="Temperature Anomaly",y=paste("Dino","Anomaly"))+
+  geom_signif(aes(x=Sign,y=dino),
+              comparisons=list(c("Negative","Positive")))
+
+
+
+
+##################################################################
+####################################################################
+
+for (taxa in label_maybe_include){
+  print(taxa)
+df_merged_short %>% mutate(Sign = if_else(!!sym(taxa)>= 0, "Positive", "Negative"))%>%
+  ggplot(aes( ymin = 0,color = Sign)) +
+  scale_color_manual(values=c("blue","red"))+
+  geom_linerange(aes_string("date",taxa,
+                            ymax = taxa),stat = "identity",
+                 position = "identity",size=0.5,show.legend = F)+
+  labs(x="Week",y=paste(taxa,"Concentration"))+
+  scale_x_date(date_breaks="1 year",date_labels=format("%Y"))+
+  ggtitle(paste(taxa,"Anomaly"))
+ggsave(filename=paste0(basepath,"/figures/anomaly/time_series/anomaly_time_series_",taxa,".png"),
+       width=1800,height=600,units="px",dpi=150)
 }
-
-names(annual_peak) <- c("year",protist_tricho_labelC)
-names(df_dtw) <- c("year",protist_tricho_labelC)
 
 #################################################################################
 #LOOPS
 ###################################################################################
+#temp anomaly vs. taxa anomaly
 for(taxa in label_maybe_include){
   print(taxa)
-  df_merged_short %>% ggplot() + geom_point(aes_string(x="Beam_temperature_corrected",y=taxa)) +
-    geom_smooth(aes_string(x="Beam_temperature_corrected",y=taxa),method="gam")+
+  df_merged_short %>% ggplot() +
+    geom_hline(yintercept=0,color="red")+
+    geom_vline(xintercept=0,color="red")+
+    geom_point(aes_string(x="Beam_temperature_corrected",y=taxa)) +
     labs(x="Temperature Anomaly",y=paste(taxa,"Anomaly"))
   ggsave(filename=paste0(basepath,"/figures/anomaly/corr_temp/anomaly_correlation_temperature_",taxa,".png"))
 }
     
-
 for(taxa in label_maybe_include){
   print(taxa)
 df_merged_short %>% mutate(year=as.factor(year)) %>% ggplot() +
@@ -162,6 +244,7 @@ df_merged_short %>% mutate(year=as.factor(year)) %>% ggplot() +
 quadroot <- function(x){x^(1/4)}
 taxa_i= "Acantharia"
 for(taxa_i in label_maybe_include){
+  
   print(taxa_i)
   min = pmin(-quadroot(abs(min(df_merged_short$Beam_temperature_corrected,na.rm=T))),-quadroot(abs(min(df_merged_short[,taxa_i],na.rm=T))))
   max = pmax(quadroot(abs(max(df_merged_short$Beam_temperature_corrected,na.rm=T))),quadroot(max(df_merged_short[,taxa_i],na.rm=T)))
@@ -182,3 +265,54 @@ for(taxa_i in label_maybe_include){
            width=800,height=800,units="px",dpi=150)
   }
 }
+
+taxa
+for(taxa_i in label_maybe_include){
+  print(taxa_i)
+df_merged_short_anomaly %>%
+  mutate(Sign = if_else(Beam_temperature_corrected>= 0, "Positive", "Negative"))%>%
+  filter(Sign!="NA") %>%
+  ggplot() +
+  geom_boxplot(aes_string(x="Sign",y=taxa_i))+
+  labs(x=expression("Temperature Anomaly"),y=paste(taxa_i,"Anomaly"))+
+  geom_signif(aes_string(x="Sign",y=taxa_i),
+              comparisons=list(c("Negative","Positive")),
+              map_signif_level = TRUE,test="t.test")
+
+ggsave(filename=paste0(basepath,"/figures/anomaly/correlation_sign_temp/anomaly_sign_temperature_",taxa_i,".png"),
+       width=800,height=800,units="px",dpi=150)
+}
+
+
+for(taxa_i in label_maybe_include){
+  print(taxa_i)
+  df_merged_short_anomaly %>%
+    mutate(Sign = if_else(Beam_temperature_corrected>= 0, "Positive", "Negative"))%>%
+    filter(Sign!="NA",season=="JJA") %>%
+    ggplot() +
+    geom_boxplot(aes_string(x="Sign",y=taxa_i))+
+    labs(x=expression("Temperature Anomaly"),y=paste(taxa_i,"Anomaly"))+
+    geom_signif(aes_string(x="Sign",y=taxa_i),
+                comparisons=list(c("Negative","Positive")),
+                map_signif_level = TRUE,test="t.test")
+  
+  ggsave(filename=paste0(basepath,"/figures/anomaly/correlation_sign_temp_summer/anomaly_sign_temperature_",taxa_i,".png"),
+         width=800,height=800,units="px",dpi=150)
+}
+
+for(taxa_i in label_maybe_include){
+  print(taxa_i)
+  df_merged_short_anomaly %>%
+    mutate(Sign = if_else(Beam_temperature_corrected>= 0, "Positive", "Negative"))%>%
+    filter(Sign!="NA",season=="DJF") %>%
+    ggplot() +
+    geom_boxplot(aes_string(x="Sign",y=taxa_i))+
+    labs(x=expression("Temperature Anomaly"),y=paste(taxa_i,"Anomaly"))+
+    geom_signif(aes_string(x="Sign",y=taxa_i),
+                comparisons=list(c("Negative","Positive")),
+                map_signif_level = TRUE,test="t.test")
+  
+  ggsave(filename=paste0(basepath,"/figures/anomaly/correlation_sign_temp_winter/anomaly_sign_temperature_",taxa_i,".png"),
+         width=800,height=800,units="px",dpi=150)
+}
+

@@ -19,22 +19,33 @@ label_include <-opt_thresh$Class[index_include]
 
 
 save(opt_thresh,label_maybe_include,label_include,file=paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
-
-
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 
 #these come from the mat files from the classifier output
 df_carbon <- read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_carbonC.csv"))
 protist_tricho_label <-read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_protist_tricho_label.csv"),header=F)$V1
 diatom_label <-read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_diatom_label.csv"),header=F)$V1
-nfg_label <- read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_nanoflagcocco_label.csv"),header=F)$V1
+nfg_label <- read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_nanoflagcocco_label.csv"),header=F)$V1 %>%
+                    append(c("Parvicorbicula_socialis","Phaeocystis"))
 metazoan_label <- read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_metazoan_label.csv"),header=F)$V1
 dino_label <- read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_dino_label.csv"),header=F)$V1
 ciliate_label <- read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_ciliate_label.csv"),header=F)$V1
 metadata <- read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_metadata.csv"),header=T)
 
+
 df_carbon$date <- as.Date(metadata$datetime,format="%d-%b-%Y %H:%M:%S")
 head(df_carbon)
+
+syn_url <- "/home/mira/MIT-WHOI/data/2023/MVCO_syn_euk_conc_2023_Mar.csv"
+df_syn_euk <- read.csv(syn_url)
+df_syn_euk$date <- as.Date(df_syn_euk$Time_UTC,format = "%d-%b-%Y %H:%M:%S")
+head(df_syn_euk)
+
+#computing daily mean
+df_syn_euk_daily <- df_syn_euk %>% group_by(date) %>% 
+  summarise(Synechococcus = mean(sum_syn_biovol_perml,na.rm=T),
+            Pico_eukaryotes = mean(sum_euk_biovol_perml,na.rm=T)) %>%
+  drop_na()
 
 list_remove <- c("Guinardia_delicatula","Guinardia_delicatula_TAG_internal_parasite",
                  "Chaetoceros_didymus","Chaetoceros_didymus_TAG_external_flagellate",
@@ -57,7 +68,7 @@ list_remove <- c("Guinardia_delicatula","Guinardia_delicatula_TAG_internal_paras
 list_add <- c("Guinardia_delicatula_merged","Cylindrotheca_merged",
               "Chaetoceros_merged", "Chrysochromulina_merged", "coccolithophorid_merged",
               "Pseudo_nitzschia_merged","Thalassionema_merged","Dinophyceae_merged",
-              "Tintinnina_merged","Strombidium_merged","Dinophysis_merged")
+              "Tintinnina_merged","Strombidium_merged","Dinophysis_merged","Synechococcus","Pico_eukaryotes")
 lookup <- c("pennate_Pseudo_nitzschia"="pennate_Pseudo.nitzschia", "Pseudo_nitzschia"="Pseudo.nitzschia")
 df_carbonC <- df_carbon %>% 
   rename(all_of(lookup)) %>%
@@ -76,7 +87,8 @@ df_carbonC <- df_carbon %>%
          Strombidium_merged = Strombidium_capitatum + Strombidium_conicum +
            Strombidium_inclinatum+Strombidium_morphotype1 + Strombidium_morphotype2 +
           Strombidium_tintinnodes+Strombidium_wulffi) %>%
-          select(-any_of(list_remove))
+          select(-any_of(list_remove)) %>%
+          full_join(df_syn_euk_daily,by="date")
 
 df_carbonC$doy_numeric <- yday(df_carbonC$date)
 
@@ -87,7 +99,7 @@ protist_tricho_labelC <- protist_tricho_label %>%  setdiff(list_remove) %>% appe
 diatom_labelC <- diatom_label %>% setdiff(list_remove) %>% append(list_add)
 
 ###### QC CHECKS
-setdiff(protist_tricho_labelC,opt_thresh$Class) #should be 0
+setdiff(protist_tricho_labelC,opt_thresh$Class) #should have 2 syn and pico euks
 setdiff(opt_thresh$Class,protist_tricho_labelC) #should be 0
 setdiff(protist_tricho_labelC,names(df_carbonC))# should be 0
 setdiff(names(df_carbonC),protist_tricho_labelC) # should contain artifacts, dates, nonliving, not protist
@@ -98,24 +110,11 @@ save(protist_tricho_labelC,diatom_labelC,ciliate_label,dino_label,nfg_label,meta
 save(metadata, file=paste0(basepath,"data/r_objects/unfilled/",Sys.Date(),"_df_carbon_meta_data.RData"))
 save(df_carbonC,file=paste0(basepath,"data/r_objects/unfilled/",Sys.Date(),"_df_carbonC.RData"))
 
+
 #reading in data
 #############################################################################
 #
 ###############################################################################
-syn_url <- "/home/mira/MIT-WHOI/data/2023/MVCO_syn_euk_conc_2023_Mar.csv"
-df_syn_euk <- read.csv(syn_url)
-df_syn_euk$date <- as.Date(df_syn_euk$Time_UTC,format = "%d-%b-%Y %H:%M:%S")
-head(df_syn_euk)
-
-#computing daily mean
-df_syn_euk_daily <- df_syn_euk %>% group_by(date) %>% 
-  summarise(synechecoccus = mean(sum_syn_biovol_perml,na.rm=T),
-            pico_euks = mean(sum_euk_biovol_perml,na.rm=T)) %>%
-  drop_na()
-
-
-protist_tricho_label_merged = c(protist_tricho_labelC,"synechecoccus","pico_euks")
-df_merged <- full_join(df_carbonC,df_syn_euk_daily,by="date")
 
 #Create filled version
 df_carbonC_filled <- df_merged %>% 
@@ -130,5 +129,5 @@ df_carbonC_filled <- df_merged %>%
   mutate(across(protist_tricho_label_merged,~replace_na(.,mean(.,na.rm=T)))) %>%
   select(all_of(c(protist_tricho_label_merged,"date","doy_numeric")))
 
-save(df_carbonC_filled,protist_tricho_label_merged,file=paste0(basepath,"data/r_objects/filled/",Sys.Date(),"_df_carbonC_filled_merged.RData"))
+save(df_carbonC_filled,file=paste0(basepath,"data/r_objects/filled/",Sys.Date(),"_df_carbonC_filled_merged.RData"))
 

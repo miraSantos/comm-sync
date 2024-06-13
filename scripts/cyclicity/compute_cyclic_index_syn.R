@@ -11,6 +11,7 @@ syn_url <- "/home/mira/MIT-WHOI/data/2023/MVCO_syn_euk_conc_2023_Mar.csv"
 df_syn_euk <- read.csv(syn_url)
 df_syn_euk$date <- as.Date(df_syn_euk$Time_UTC,format = "%d-%b-%Y %H:%M:%S")
 head(df_syn_euk)
+quadroot <- function(x){x^(1/4)}
 
 #computing daily mean
 df_syn_euk <- df_syn_euk %>% group_by(date) %>% 
