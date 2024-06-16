@@ -9,25 +9,17 @@ if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
 
-
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-12_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-12_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
-load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-12.RData"))
+load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-13.RData"))
 
 ####################################################
 #PLOT individual correlation over time
 ###############################################3
-ii = which(protist_tricho_labelC=="Acantharia")
-ggplot(data=df_cor) + geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]))+
-  geom_segment(aes_string(x="year",y=0,xend="year",yend=protist_tricho_labelC[ii]))+
-  geom_hline(aes(yintercept=0),color="black")+
-  scale_x_continuous(breaks=seq(2006,2023,2))+ylim(-1,1)+
-  ylab("Correlation Coefficient") +xlab("Year")+
-  ggtitle(protist_tricho_labelC[ii])
+ii = which(protist_tricho_labelC=="Corethron_hystrix")
 
-ggplot(df_carbonC_wyear_mean) + geom_point(aes(x=date,y=detritus))
-
+#plot correlation coefficient over time
 ggplot(data=df_cor) + geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]))+
   geom_line(aes_string(x="year",y=protist_tricho_labelC[ii]))+
   geom_hline(aes(yintercept=0),color="black")+
@@ -35,13 +27,9 @@ ggplot(data=df_cor) + geom_point(aes_string(x="year",y=protist_tricho_labelC[ii]
   ylab("Correlation Coefficient") +xlab("Year")+
   ggtitle(protist_tricho_labelC[ii])
 
-# df_cor %>% gather(key="class",value="corr_coef",-c("year")) %>% 
-#   group_by(class) %>%
-#   %>%
-#   ggplot() + geom_boxplot(aes(x=reorder(func_group,y=corr_coef))+coord_flip()+
-#   ylim(0,1)+
-#   labs(x="Taxa",y="Cyclicity Index")
-# 
+df_carbonC_wyear_mean %>% mutate_at(protist_tricho_labelC,quadroot) %>% 
+  ggplot() + geom_point(aes_string(x="date",y=protist_tricho_labelC[ii]),size=0.5)+
+  scale_x_date(date_breaks="1 year",date_labels=format("%Y"))
 
 
 index_ranking <- order(c_index$cyclicity_index,c_index$func_group)
@@ -50,12 +38,13 @@ c_index$split_facet[index_ranking[1:40]] <- 3
 c_index$split_facet[index_ranking[41:80]] <- 2
 c_index$split_facet[index_ranking[81:118]] <- 1
 
+
 ###################################################################################
 #plot c_index
 ##################################################################################
 
 #for colorcoding text by functional group
-my_colors <- RColorBrewer::brewer.pal(8, "Dark2")
+my_colors <- RColorBrewer::brewer.pal(7, "Dark2")
 map <- data.frame(func_group=func_group_list,colors=my_colors)
 color_code = left_join(c_index[order(c_index$cyclicity_index,c_index$func_group),],map,by="func_group",relationship = "many-to-many")$colors
 map_dict <- map$colors

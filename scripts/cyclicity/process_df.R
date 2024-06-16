@@ -117,17 +117,17 @@ save(df_carbonC,file=paste0(basepath,"data/r_objects/unfilled/",Sys.Date(),"_df_
 ###############################################################################
 
 #Create filled version
-df_carbonC_filled <- df_merged %>% 
+df_carbonC_filled <- df_carbonC %>% 
   group_by(date) %>%
-  summarize(across(all_of(protist_tricho_label_merged),mean)) %>%
+  summarize(across(all_of(protist_tricho_labelC),mean)) %>%
   #set to daily frequency
   complete(date = seq.Date(min(df_carbonC$date),max(df_carbonC$date), by="day")) %>%
   #fill out doy_numeric
   mutate(doy_numeric = yday(date)) %>%
   group_by(doy_numeric)%>%
   #replace nans for living things with yearly mean
-  mutate(across(protist_tricho_label_merged,~replace_na(.,mean(.,na.rm=T)))) %>%
-  select(all_of(c(protist_tricho_label_merged,"date","doy_numeric")))
+  mutate(across(protist_tricho_labelC,~replace_na(.,mean(.,na.rm=T)))) %>%
+  select(all_of(c(protist_tricho_labelC,"date","doy_numeric")))
 
 save(df_carbonC_filled,file=paste0(basepath,"data/r_objects/filled/",Sys.Date(),"_df_carbonC_filled_merged.RData"))
 

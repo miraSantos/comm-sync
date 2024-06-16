@@ -18,8 +18,9 @@ load(paste0(basepath,"/data/r_objects/c_index_df_cor_2024_May_13.RData"))
 bin_count = 12
 set.seed(7)
 
+func_group_list
 
-my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
+my_colors <- RColorBrewer::brewer.pal(7, "Dark2")
 map <- data.frame(func_group=func_group_list,colors=my_colors)
 map_dict <- map$colors
 names(map_dict) <- map$func_group
@@ -32,7 +33,7 @@ c_index  %>% filter(species %in% label_maybe_include) %>% ggplot() +
   xlab("Cyclicity Index (Median Correlation)") + ylab("Normalized Density") + 
   scale_fill_manual(values=map_dict)+
   scale_color_manual(values=map_dict,name="Functional\nGroup")+
-  scale_linetype_manual(values=c("twodash","solid","longdash","dotted","dashed"))+
+  scale_linetype_manual(values=c("twodash","solid","longdash","dotted","dashed","dotdash","dashed","dotdash"))+
   labs(color  = "Functional\nGroup", linetype ="Functional\nGroup", fill = "Functional\nGroup")+
   theme(
     panel.background = element_rect(fill = "white", colour = "black",
@@ -45,6 +46,25 @@ c_index  %>% filter(species %in% label_maybe_include) %>% ggplot() +
 
 ggsave(filename=paste0(basepath,"/figures/cyclic_index/histogram_cyclicity_index_median_quadroot_normalized",Sys.Date(),".png"),
        width=1500,height=800,units="px",dpi=200)
+
+######################################################################
+#plot histogram
+#####################################################################
+c_index  %>% filter(species %in% label_maybe_include) %>% ggplot() +
+  geom_histogram(aes(cyclicity_index,fill=func_group,color=func_group),bins=10,alpha=0.5)+
+  xlim(0,1)+  
+  xlab("Cyclicity Index (Median Correlation)") + ylab("Count") + 
+  scale_fill_manual(values=map_dict)+
+  scale_color_manual(values=map_dict,name="Functional\nGroup")+
+  labs(color  = "Functional\nGroup", fill = "Functional\nGroup")+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    linewidth = 0.75, linetype = "solid"),
+    panel.grid.major = element_line(linewidth = 0.25, linetype = 'solid',
+                                    colour = "gray"), 
+    panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
+                                    colour = "white")
+  )
 
 
 
@@ -287,3 +307,66 @@ df_carbonC_wyear_mean %>% filter(year==y) %>% ggplot() +
   geom_point(data=ref_year_interp[ref_year_interp$year==y,],aes(x=week,y=Acantharia,color="red"),shape=3)+
   geom_point(data=test,aes(x=week,Acantharia),shape=3,color="blue")
 
+
+################################################################################
+#PLOT INDIVIDUAL FUNCTIONAL GROUPS
+################################################################################
+#four groups in a facet grid as columns
+c_index  %>% filter(species %in% label_maybe_include,
+                    func_group %in% c("Diatom","Dinoflagellate","Ciliate","Misc. Nanoplankton")) %>%
+  ggplot() +
+  geom_histogram(aes(cyclicity_index,fill=func_group),color="white",bins=11,alpha=0.5,position="identity")+
+  xlim(0,1)+  
+  xlab("Cyclicity Index (Median Correlation)") + ylab("Count") + 
+  scale_fill_manual(values=map_dict)+
+  scale_color_manual(values=map_dict,name="Functional\nGroup")+
+  facet_grid(cols=vars(as.factor(func_group)))+
+  scale_linetype_manual(values=c("twodash","solid","longdash","dotted","dashed","dotdash","dashed","dotdash"))+
+  labs(color  = "Functional\nGroup", linetype ="Functional\nGroup", fill = "Functional\nGroup")+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    linewidth = 0.75, linetype = "solid"),
+    panel.grid.major = element_line(linewidth = 0.25, linetype = 'solid',
+                                    colour = "gray"), 
+    panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
+                                    colour = "white"),
+    axis.text.x = element_text(angle = -45, vjust = 0.5, hjust=0.23))
+
+ggsave(filename=paste0(basepath,
+                       "/figures/cyclic_index/histogram_cyclic_index_median_",Sys.Date(),".png"),
+                        width=1300,height=350,units="px",dpi=150)
+
+
+c_index  %>% filter(species %in% label_maybe_include,func_group %in% c("Dinoflagellate")) %>% ggplot() +
+  geom_histogram(aes(cyclicity_index,fill=func_group,color=func_group,linetype=func_group),bins=10,alpha=0.5)+
+  xlim(0,1)+  
+  xlab("Cyclicity Index (Median Correlation)") + ylab("Count") + 
+  scale_fill_manual(values=map_dict)+
+  scale_color_manual(values=map_dict,name="Functional\nGroup")+
+  scale_linetype_manual(values=c("twodash","solid","longdash","dotted","dashed","dotdash","dashed","dotdash"))+
+  labs(color  = "Functional\nGroup", linetype ="Functional\nGroup", fill = "Functional\nGroup")+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    linewidth = 0.75, linetype = "solid"),
+    panel.grid.major = element_line(linewidth = 0.25, linetype = 'solid',
+                                    colour = "gray"), 
+    panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
+                                    colour = "white")
+  )
+
+c_index  %>% filter(species %in% label_maybe_include,func_group=="Misc. Nanoplankton") %>% ggplot() +
+  geom_histogram(aes(cyclicity_index,fill=func_group,color=func_group,linetype=func_group),bins=10,alpha=0.5)+
+  xlim(0,1)+  
+  xlab("Cyclicity Index (Median Correlation)") + ylab("Count") + 
+  scale_fill_manual(values=map_dict)+
+  scale_color_manual(values=map_dict,name="Functional\nGroup")+
+  scale_linetype_manual(values=c("twodash","solid","longdash","dotted","dashed","dotdash","dashed","dotdash"))+
+  labs(color  = "Functional\nGroup", linetype ="Functional\nGroup", fill = "Functional\nGroup")+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    linewidth = 0.75, linetype = "solid"),
+    panel.grid.major = element_line(linewidth = 0.25, linetype = 'solid',
+                                    colour = "gray"), 
+    panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
+                                    colour = "white")
+  )
