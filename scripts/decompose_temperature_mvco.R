@@ -10,11 +10,21 @@ if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
 #load environmental variable
-df_env <- read.csv(paste0(basepath,"/data/mvco/mvco_daily_2023.csv"))
-head(df_env)
-df_env$date <- as.Date(df_env$days,format ="%d-%b-%Y")
+df_env <- read.csv(paste0(basepath,"/data/mvco/mvco_daily_2023.csv")) %>% 
+  mutate(date= as.Date(days,format ="%d-%b-%Y"),wyear=paste0(year(date),"-",week(date)))%>%
+  group_by(wyear) %>% summarise(mean_weekly_temp = mean(Beam_temperature_corrected,na.rm=T)) %>%
+  drop_na()
 
-temp_raw <- drop_na(df_env[,c("date","Beam_temperature_corrected")])$Beam_temperature_corrected
-temp_raw
-ts_temp<- ts(temp_raw,start=c(2001,170),end=c(2021,305),frequency=365)
-decompose(na.StructTS(ts_temp))
+
+head(df_env)
+length(df_env$wyear)
+tail(df_env)
+
+plot(df_env$mean_weekly_temp)
+
+ts_temp<- ts(df_env$mean_weekly_temp,start=c(2001,9),end=c(2021,9),frequency=53) #53 indicates weekly
+decom_temp_add <- decompose(na.StructTS(ts_temp),type="additive")
+decom_temp_mult <- decompose(na.StructTS(ts_temp),type="multiplicative")
+
+plot(decom_temp_add)
+plot(decom_temp_mult)
