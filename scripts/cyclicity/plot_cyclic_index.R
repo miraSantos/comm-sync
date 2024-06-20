@@ -141,28 +141,3 @@ ggplot(data=c_index) + geom_bar(aes(x=reorder(species,+sd),
 
 ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_sd.png"),
        width=1500,height=3000,units="px",dpi=200)
-
-############################
-#DTW
-#############################
-
-my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
-map <- data.frame(func_group=func_group_list,colors=my_colors)
-color_code = left_join(c_index[order(c_index$dtw,c_index$func_group),],map,by="func_group")$colors
-map_dict <- map$colors
-names(map_dict) <- map$func_group
-
-c_index %>% ggplot() +
-  geom_bar(aes(x=reorder(species,+dtw),y=dtw,fill=as.factor(func_group)),
-           stat="identity")+
-  coord_flip()+
-  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
-  xlab("dtw Distance") + ylab("Taxa")+
-  theme(axis.text.y = element_text(colour = color_code))
-
-
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_dtw.png"),
-       width=1500,height=3000,units="px",dpi=200)
-
-ggplot(data=df_carbonC)+geom_point(aes(x=date,y=Paralia_sulcata))+
-  scale_x_date()

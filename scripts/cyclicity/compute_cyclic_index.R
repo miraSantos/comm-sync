@@ -14,6 +14,10 @@ load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 load(paste0(basepath,"/data/r_objects/2024-06-04_df_carbonC_filled_super_res_paul.RData"))
 
+
+protist_tricho_labelC <- append(protist_tricho_labelC,"random")
+
+df_carbonC$random <- runif(length(df_carbonC$Acanthoica_quattrospina),min=0,max=300)
 #add date time objects
 df_carbonC$doy_numeric <- yday(df_carbonC$date)
 df_carbonC$week <- week(df_carbonC$date)

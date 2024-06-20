@@ -9,10 +9,13 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024_Apr_26_df_carbonC.RData"))
+
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
-load(paste0(basepath,"/data/r_objects/c_index_df_cor_2024_May_13.RData"))
+load(paste0(basepath,"/data/r_objects/2024-06-04_df_carbonC_filled_super_res_paul.RData"))
+load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-13.RData"))
+
 
 
 df_env <- read.csv("/home/mira/MIT-WHOI/Week.2024.05.19-25/mvco_temp_2024.csv")
@@ -20,8 +23,13 @@ df_env$date <- as.Date(df_env$timestamp,format ="%Y-%m-%dT%H:%M:%S")
 df_env$year <- year(df_env$date)
 
 df_env %>% filter(year>=2006) %>% ggplot() + geom_line(aes(x=date,y=temperature_merge),size=1.2)+
-  xlab("Time")+ylab("Temperature (Deg C)")+
-  scale_x_date(date_breaks = "2 years",date_labels = "%Y")
+  xlab("Date")+ylab(expression("Temperature ("*degree*"C)"))+
+  scale_x_date(date_breaks = "2 years",date_labels = "%Y")+
+  theme_bw()
+
+ggsave(filename=paste0(basepath,"/figures/temperature_time_series_",Sys.Date(),".png"),
+       width=2000,height=714,units="px",dpi=300)
+
 
 df_env= df_env %>% filter(year>=2006)
 week <- seq(1,53,1)
