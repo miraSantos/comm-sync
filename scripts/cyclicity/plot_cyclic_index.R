@@ -46,23 +46,23 @@ c_index$split_facet[index_ranking[81:118]] <- 1
 #for colorcoding text by functional group
 my_colors <- RColorBrewer::brewer.pal(7, "Dark2")
 map <- data.frame(func_group=func_group_list,colors=my_colors)
-color_code = left_join(c_index[order(c_index$cyclicity_index,c_index$func_group),],map,by="func_group",relationship = "many-to-many")$colors
+color_code = left_join(c_index[order(c_index$max_xcorr,c_index$func_group),],map,by="func_group",relationship = "many-to-many")$colors
 map_dict <- map$colors
 names(map_dict) <- map$func_group
 
 
 bar_c_index_include <- c_index %>% filter(species %in% label_include)%>%
-  ggplot() + geom_bar(aes(x=reorder(species,+cyclicity_index),
-                          y=cyclicity_index,
+  ggplot() + geom_bar(aes(x=reorder(species,+max_xcorr),
+                          y=max_xcorr,
                           fill=func_group),
                       stat="identity")+
-  geom_errorbar(aes(x=reorder(species,+cyclicity_index),
-                    y=cyclicity_index,ymin=cyclicity_index-sd,
-                    ymax=cyclicity_index+sd),
+  geom_errorbar(aes(x=reorder(species,+max_xcorr),
+                    y=cyclicity_index,ymin=max_xcorr-max_xcorr_sd,
+                    ymax=max_xcorr+max_xcorr_sd),
                 color="black", width=.01) +
   scale_fill_manual(values=map_dict,name="Functional\nGroup")+
   coord_flip()+
-  ylab("Cyclicity Index")+xlab("Taxa")+
+  ylab("Lag-Adjusted Cyclicity Index")+xlab("Taxa")+
   # theme(axis.text.y = element_text(colour = color_code))+
   theme(
     panel.background = element_rect(fill = "white", colour = "black",
@@ -82,7 +82,7 @@ bar_c_index_include_maybe <- c_index %>% filter(species %in% label_maybe_include
                     ymax=cyclicity_index+sd),
                 color="black", width=.01) +
   scale_fill_manual(values=map_dict,name="Functional\nGroup")+
-  ylab("Cyclicity Index")+xlab("Taxa")+
+  ylab("Lag-Adjusted Cyclicity Index")+xlab("Taxa")+
   # theme(axis.text.y = element_text(colour = color_code))+
   theme(
     panel.background = element_rect(fill = "white", colour = "black",
@@ -96,7 +96,7 @@ bar_c_index_include_maybe <- c_index %>% filter(species %in% label_maybe_include
 
 bar_c_index_include
 
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_error_bar_",Sys.Date(),".png"),
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_lag_adjusted_error_bar_",Sys.Date(),".png"),
        width=1500,height=2000,units="px",dpi=200)
 
 bar_c_index_include_maybe

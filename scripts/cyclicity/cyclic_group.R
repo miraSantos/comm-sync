@@ -63,9 +63,11 @@ ref_year_interp <- df_group_wyear_mean%>%
 week_climatology = week_means_quadroot %>% select(all_of(func_groups))
 
 #create dataframe to store correlations
-df_cor <- as.data.frame(matrix(nrow=0,ncol=length(func_groups)+1))
+df_cor_group <- as.data.frame(matrix(nrow=0,ncol=length(func_groups)+1))
+df_max_xcorr_group <- data.table::copy(df_cor_group)
+df_lag_xcorr_group <- data.table::copy(df_cor_group)
 df_dtw <- as.data.frame(matrix(nrow=0,ncol=length(func_groups)+1))
-names(df_cor) <- c("year",func_groups)
+names(df_cor_group) <- c("year",func_groups)
 names(df_dtw) <- c("year",func_groups)
 annual_peak <- as.data.frame(matrix(NaN,nrow = 0,ncol=length(func_groups)+1))
 names(annual_peak) <- c("year",func_groups)
@@ -77,14 +79,28 @@ for(y in 1:length(years)){
   #extract week year means of a specific year
   individual_year <- ref_year_interp %>% ungroup() %>% filter(year == years[y]) %>% select(func_groups)
   #extract diagonal of the correlation matrix
-  correlation= diag(cor(week_climatology,individual_year))
+  correlation = diag(cor(week_climatology,individual_year))
+  
+  compute_lag <- function(x){if(is.na(max(x$acf))==FALSE){x$lag[which.max(x$acf)]}else{NaN}}
+  #compute cross correlation and 
+  compute_xcorr<-function(x,y){ccf(x,y,na.action=na.pass,pl=FALSE)}
+  #compute cross correation
+  xcorr = mapply(compute_xcorr,week_climatology,individual_year,SIMPLIFY=FALSE)
+  #extract max correlation
+  max_xcorr= lapply(xcorr,function(x)max(x$acf))
+  #extract lag at max correlation
+  lag_xcorr = lapply(xcorr,compute_lag)
+
+  df_max_xcorr_group <- rbind(df_max_xcorr_group, as.data.frame(do.call(cbind, max_xcorr)))
+  df_lag_xcorr_group <-rbind(df_lag_xcorr_group, as.data.frame(do.call(cbind, lag_xcorr)))
+  
   for(i in 1:length(func_groups)){
     dtw_distance[i] <- dtw(individual_year[,i],week_climatology[,i])$normalizedDistance
   } 
   append_this_cor <- as.data.frame(t(c(year=years[y],correlation)))
   append_this_dtw <- as.data.frame(t(c(year=years[y],dtw_distance)))
   #append to dataframe
-  df_cor <- rbind(df_cor,append_this_cor)
+  df_cor_group <- rbind(df_cor_group,append_this_cor)
   df_dtw <- rbind(df_dtw,append_this_dtw)
   annual_peak <- rbind(annual_peak,c(year=years[y],sapply(individual_year, max, na.rm = TRUE)))
 }
@@ -99,19 +115,25 @@ z= sin(x) + 1
 dtw(y,z)$normalizedDistance
 
 #take mean of cyclic index
-c_index_median = apply(df_cor[,func_groups],2,median,na.rm=T)
-c_index_sd <- apply(df_cor[,func_groups], 2, sd,na.rm=T)
+c_index_median = apply(df_cor_group[,func_groups],2,median,na.rm=T)
+c_index_sd <- apply(df_cor_group[,func_groups], 2, sd,na.rm=T)
 c_index_median_dtw = apply(df_dtw[,func_groups],2,median,na.rm=T)
+c_index_max_xcorr_group <-apply(df_max_xcorr_group[,func_groups], 2, mean,na.rm=T)
+c_index_max_xcorr_sd_group <-apply(df_max_xcorr_group[,func_groups], 2, sd,na.rm=T)
+c_index_lag_xcorr_group <-apply(df_lag_xcorr_group[,func_groups], 2, mean,na.rm=T)
 consistency.fun <- function(annual_peak){1 - sd(annual_peak - mean(annual_peak))/mean(annual_peak)}
 consistency_index <- apply(annual_peak[,func_groups],2,consistency.fun)
 
-c_index = data.frame(cyclicity_index=c_index_median,sd=c_index_sd,
+c_index_group = data.frame(cyclicity_index=c_index_median,sd=c_index_sd,
                      consistency = consistency_index,
-                     dtw = c_index_median_dtw)
-c_index$species <- rownames(c_index)
+                     dtw = c_index_median_dtw,
+                     max_xcorr=c_index_max_xcorr_group,
+                     max_xcorr_sd = c_index_max_xcorr_sd_group,
+                     lag_xcorr = c_index_lag_xcorr_group)
+c_index_group$func_group <- rownames(c_index_group)
 
 
-save(c_index,df_cor,file=paste0(basepath,"/data/r_objects/c_index_df_group_",Sys.Date(),".RData"))
+save(c_index_group,df_cor_group,file=paste0(basepath,"/data/r_objects/c_index_df_group_",Sys.Date(),".RData"))
 
 
 #plot cyclicty index across functional groups.
@@ -124,9 +146,9 @@ c_index %>% ggplot()+
                     ymax=cyclicity_index+sd),
                 color="black", width=.01)
 
-head(df_cor)
+head(df_cor_group)
 #plot violin plots
-df_cor %>% select(func_groups,year) %>% gather(key="func_group",value="corr_coef",-c("year")) %>%
+df_cor_group %>% select(func_groups,year) %>% gather(key="func_group",value="corr_coef",-c("year")) %>%
   ggplot() + geom_boxplot(aes(x=func_group,y=corr_coef))+coord_flip()+
   ylim(0,1)+
   labs(x="Functional Group",y="Cyclicity Index")

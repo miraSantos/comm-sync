@@ -23,7 +23,8 @@ df_env <- read.csv(paste0(basepath,"/data/mvco/mvco_daily_2023.csv"))
 head(df_env)
 df_env$date <- as.Date(df_env$days,format ="%d-%b-%Y")
 
-df_env_merge <-merge(df_carbonC,df_env[,c("Beam_temperature_corrected","AvgSolar","date")], by="date") %>%
+df_env_merge <-merge(df_carbonC,df_env[,c("Beam_temperature_corrected","AvgSolar","date")],
+                     by="date") %>%
   mutate(year = year(date),week=week(date),wyear=paste0(week(date),"-",year(date)))
 
 df_merge_wyear_mean <-df_env_merge %>%
@@ -31,7 +32,6 @@ df_merge_wyear_mean <-df_env_merge %>%
   mutate_at(c(label_maybe_include,"Beam_temperature_corrected","AvgSolar"),mean,na.rm=T) %>%
   distinct(wyear, .keep_all=TRUE) %>%
   ungroup()
-
 
 week_medians <- df_env_merge %>% 
   group_by(week) %>%
@@ -125,6 +125,7 @@ skewness(df_merged_short_anomaly$Beam_temperature_corrected,na.rm=T)
 kurtosis(df_merged_short_anomaly$AvgSolar,na.rm=T)
 skewness(df_merged_short_anomaly$AvgSolar,na.rm=T)
 
+decom_temp_add$trend
 
 
 #plot histogram of temperature anomaly

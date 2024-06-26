@@ -80,6 +80,8 @@ week_climatology = week_means_quadroot %>% select(all_of(protist_tricho_labelC))
 #create dataframe to store correlations
 df_cor <- as.data.frame(matrix(nrow=0,ncol=length(protist_tricho_labelC)+1))
 names(df_cor) <- c("year",protist_tricho_labelC)
+df_max_xcorr <- data.table::copy(df_cor)
+df_lag_xcorr <- data.table::copy(df_cor)
 annual_peak <- as.data.frame(matrix(NaN,nrow = 0,ncol=length(protist_tricho_labelC)+1))
 names(annual_peak) <- c("year",protist_tricho_labelC)
 annual_peak_timing <- as.data.frame(matrix(NaN,nrow = 0,ncol=length(protist_tricho_labelC)+1))
@@ -102,8 +104,21 @@ for(y in 1:length(years)){
   #compute correlation matrix - extract diagonal of the correlation matrix
   correlation = diag(cor(climatology,df_y))
   
+  #compute cross correlation and 
+  compute_lag <- function(x){if(is.na(max(x$acf))==FALSE){x$lag[which.max(x$acf)]}else{NaN}}
+  compute_xcorr<-function(x,y){ccf(x,y,na.action=na.pass,pl=FALSE)}
+  #compute cross correation
+  xcorr = mapply(compute_xcorr,climatology,df_y,SIMPLIFY=FALSE)
+  #extract max correlation
+  max_xcorr= lapply(xcorr,function(x)max(x$acf))
+  #extract lag at max correlation
+  lag_xcorr = lapply(xcorr,compute_lag)
   append_this_cor <- as.data.frame(t(c(year=years[y],correlation)))
   df_cor <- rbind(df_cor,append_this_cor)
+  append_this_xcorr <- as.data.frame(do.call(cbind, max_xcorr)) %>% mutate(year=years[y])
+  append_this_lag_xcorr <-  as.data.frame(do.call(cbind, lag_xcorr)) %>% mutate(year=years[y])
+  df_max_xcorr <- rbind(df_max_xcorr, append_this_xcorr)
+  df_lag_xcorr <-rbind(df_lag_xcorr, append_this_lag_xcorr)
   
   annual_peak <- rbind(annual_peak,c(year=years[y],sapply(individual_year[,protist_tricho_labelC], max, na.rm = TRUE)))
   annual_peak_timing <- rbind(annual_peak_timing,c(year=years[y],sapply(individual_year[,protist_tricho_labelC], which.max)))
@@ -113,13 +128,21 @@ names(annual_peak) <- c("year",protist_tricho_labelC)
 names(annual_peak_timing) <- c("year",protist_tricho_labelC)
 
 #take mean of cyclic index
-c_index_median = apply(df_cor[,protist_tricho_labelC],2,median,na.rm=T)
+c_index_mean = apply(df_cor[,protist_tricho_labelC],2,mean,na.rm=T)
 c_index_sd <- apply(df_cor[,protist_tricho_labelC], 2, sd,na.rm=T)
+c_index_max_xcorr <-apply(df_max_xcorr[,protist_tricho_labelC], 2, mean,na.rm=T)
+c_index_max_xcorr_sd <-apply(df_max_xcorr[,protist_tricho_labelC], 2, sd,na.rm=T)
+c_index_lag_corr <-apply(df_lag_xcorr[,protist_tricho_labelC], 2, mean,na.rm=T)
+
 consistency.fun <- function(annual_peak){1 - sd(annual_peak - mean(annual_peak))/mean(annual_peak)}
 consistency_index <- apply(annual_peak[,protist_tricho_labelC],2,consistency.fun)
 
-c_index = data.frame(cyclicity_index=c_index_median,sd=c_index_sd,
-                     consistency = consistency_index)
+c_index = data.frame(cyclicity_index=c_index_mean,
+                     sd=c_index_sd,
+                     consistency = consistency_index,
+                     max_xcorr = c_index_max_xcorr,
+                     max_xcorr_sd = c_index_max_xcorr_sd,
+                     lag_xcorr = c_index_lag_corr)
 c_index$species <- rownames(c_index)
 
 
@@ -133,6 +156,6 @@ for(func_group in 1:length(func_group_list)){
   c_index[c_index$species%in%reference,"func_group"] = func_group_list[func_group]
 }
 
-save(c_index,df_cor,func_group_list,annual_peak,annual_peak_timing,file=paste0(basepath,"/data/r_objects/c_index_df_cor_",Sys.Date(),".RData"))
+save(c_index,df_cor,df_max_xcorr,df_lag_xcorr,func_group_list,annual_peak,annual_peak_timing,file=paste0(basepath,"/data/r_objects/c_index_df_cor_",Sys.Date(),".RData"))
 
 

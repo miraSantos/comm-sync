@@ -18,14 +18,33 @@ load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-13.RData"))
 
 
 
-df_env <- read.csv("/home/mira/MIT-WHOI/Week.2024.05.19-25/mvco_temp_2024.csv")
-df_env$date <- as.Date(df_env$timestamp,format ="%Y-%m-%dT%H:%M:%S")
+df_env <- read.csv("/home/mira/MIT-WHOI/github_repos/comm-sync/data/mvco/mvco_daily_2023.csv")
+head(df_env)
+df_env$date <- as.Date(df_env$days,format ="%d-%b-%Y")
 df_env$year <- year(df_env$date)
+df_env$week <- week(df_env$date)
 
-df_env %>% filter(year>=2006) %>% ggplot() + geom_line(aes(x=date,y=temperature_merge),size=1.2)+
-  xlab("Date")+ylab(expression("Temperature ("*degree*"C)"))+
-  scale_x_date(date_breaks = "2 years",date_labels = "%Y")+
-  theme_bw()
+df_env_weekly <-df_env %>% mutate(wyear=paste0(year(date),"-",week(date))) %>% 
+  group_by(wyear) %>%
+  summarise(mean_temp = mean(Beam_temperature_corrected,na.rm=T),
+            mean_light = mean(AvgSolar,na.rm=T),
+            week=week,year=year)
+
+week_clim <- df_env %>% group_by(week) %>% summarise(mean_temp=mean(Beam_temperature_corrected,na.rm=T),
+                                                     mean_light = mean(AvgSolar,na.rm=T),
+                                                     week=week)
+df_env_weekly %>% ggplot + geom_line(aes(x=week,y=mean_temp,
+                                   color=as.factor(year)),alpha=0.5)+
+  geom_line(data=week_clim,aes(x=week,y=mean_temp),linetype="dashed")+
+  scale_x_continuous(breaks=seq(1,53,4))+
+  labs(color="Year",x="Week",y=expression("Temperature ("*degree*"C)"))
+
+df_env_weekly %>% ggplot + geom_line(aes(x=week,y=mean_light,
+                                         color=as.factor(year)),alpha=0.5)+
+  geom_line(data=week_clim,aes(x=week,y=mean_light),linetype="dashed")+
+  scale_x_continuous(breaks=seq(1,53,4))+
+  labs(color="Year",x="Week",y=expression("Average Daily Integrated Solar Irradiance (Wm"^-2*")"))
+
 
 ggsave(filename=paste0(basepath,"/figures/temperature_time_series_",Sys.Date(),".png"),
        width=2000,height=714,units="px",dpi=300)
@@ -40,17 +59,17 @@ dfweek <- data.frame(wyear=paste0(week_list,"-",year_list),week=week_list,year=y
 df_env$year <- year(df_env$date)
 df_env$week<-week(df_env$date)
 
-df_env$wyear <- paste0(df_env$week,"-",df_env$year)
+df_env$wyear <- paste0(df_env$year,"-",df_env$date)
 
 week_means <- df_env %>% 
   group_by(week) %>%
-  mutate_at(c("temperature_merge"),mean,na.rm=T)
+  mutate_at(c("Beam_temperature_corrected","AvgSolar"),mean,na.rm=T)
 
 #compute mean temperature for each week of the year
 df_env_wyear_mean <-df_env %>%
-  select(wyear,temperature_merge,date,year,week) %>%
+  select(wyear,Beam_temperature_corrected,AvgSolar,date,year,week) %>%
   group_by(wyear) %>%
-  mutate_at(c("temperature_merge"),mean,na.rm=T) %>%
+  mutate_at(c("Beam_temperature_corrected","AvgSolar"),mean,na.rm=T) %>%
   distinct(wyear, .keep_all=TRUE) %>%
   ungroup()
 df_env_wyear_mean$year <- year(df_env_wyear_mean$date)
