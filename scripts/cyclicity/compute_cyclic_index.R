@@ -143,13 +143,13 @@ c_index = data.frame(cyclicity_index=c_index_mean,
                      max_xcorr = c_index_max_xcorr,
                      max_xcorr_sd = c_index_max_xcorr_sd,
                      lag_xcorr = c_index_lag_corr)
-c_index$species <- rownames(c_index)
+c_index$taxa <- rownames(c_index)
 
 
 #add functional group column to cyclic index object
 #load ifcb class list file that categories each species in a functional group
-func_group_list = c("Diatom","Dinoflagellate","Ciliate","Misc. Nanoplankton","Metazoan","Cyanobacteria","Picoeukaryotes")
-func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nfg_label,metazoan_label,c("Synechococcus","Trichodesmium"),c("Pico_eukaryotes"))
+func_group_list = c("Diatom","Dinoflagellate","Ciliate","Misc. Nanoplankton","Metazoan","Synechococcus","Picoeukaryotes")
+func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nfg_label,metazoan_label,c("Synechococcus"),c("Pico_eukaryotes"))
 #create column with functional group 
 for(func_group in 1:length(func_group_list)){
   reference=func_group_labels[[func_group]]

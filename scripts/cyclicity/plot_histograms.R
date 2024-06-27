@@ -30,21 +30,6 @@ names(map_dict) <- map$func_group
 ######################################################################
 #plot histogram
 #####################################################################
-c_index  %>% filter(species %in% label_maybe_include) %>% ggplot() +
-  geom_histogram(aes(cyclicity_index,fill=func_group,color=func_group),bins=10,alpha=0.5)+
-  xlim(0,1)+  
-  xlab("Cyclicity Index (Median Correlation)") + ylab("Count") + 
-  scale_fill_manual(values=map_dict)+
-  scale_color_manual(values=map_dict,name="Functional\nGroup")+
-  labs(color  = "Functional\nGroup", fill = "Functional\nGroup")+
-  theme(
-    panel.background = element_rect(fill = "white", colour = "black",
-                                    linewidth = 0.75, linetype = "solid"),
-    panel.grid.major = element_line(linewidth = 0.25, linetype = 'solid',
-                                    colour = "gray"), 
-    panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
-                                    colour = "white")
-  )
 
 #plot individual interpolation
 y = 2023
@@ -54,6 +39,9 @@ df_carbonC_wyear_mean %>% filter(year==y) %>% ggplot() +
   geom_point(data=ref_year_interp[ref_year_interp$year==y,],aes(x=week,y=Acantharia,color="red"),shape=3)+
   geom_point(data=test,aes(x=week,Acantharia),shape=3,color="blue")
 
+
+#introduce cyclic index of groups 
+load(paste0(basepath,"/"))
 c_index_group_cut <- c_index_group %>%
                       filter(func_group %in% c("Diatom_noDetritus",
                                         "Dinoflagellate",

@@ -2,7 +2,7 @@ basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 list.of.packages <- c("RColorBrewer", "lubridate",
                       "ggplot2","tibbletime","dplyr","tidyr","zoo","stringr",
                       "ggsignif","plotly","rlang","dtw","scales","patchwork",
-                      "moments","stats","ggfortify")
+                      "moments","stats","ggfortify","seasonal")
 
 #find new packages and install them. require all packages in list
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -58,6 +58,7 @@ decom_light_mult <- decompose(ts_light,type="multiplicative")
 plot(ts_light)
 str(decom_light_mult)
 
+plot(decom_light_add)
 qqnorm(decom_temp_mult$random)
 qqline(decom_temp_mult$random)
 
@@ -103,9 +104,16 @@ shapiro.test(decom_temp_add$random)
 ### CONCLUSION DECOMPOSING ISNT VERY USEFUL FOR THIS SITE losing alot of information
 
 #stl fit
-stl_temp <- stl(ts_temp,s.window=53)
+##########################################################################################
+#s.window is the size of the seasonal window and t.window is the size of the trend windo
+stl_temp <- stl(ts_temp,s.window=53,t.window=53*3+1,robust=TRUE)
+
 autoplot(stl_temp) + scale_x_continuous(breaks=seq(2002,2023,3))+theme_bw()+
   labs(x="Time",y=expression("Temperature ("*degree*"C)"))
+
+ggsave(filename=paste0(basepath,"/figures/decomposition/temperature/stl_decomposition_",
+                       Sys.Date(),".png"),
+       width=1200,height=1500,units="px",dpi=200)
 
 #plot residuals qq quantiles  to see if fit is good
 png(filename=paste0(basepath,"/figures/decomposition/temperature/qqplot_temp_",Sys.Date(),".png"),
@@ -117,4 +125,8 @@ dev.off()
 #shapiro test
 shapiro.test(stl_temp$time.series[, "remainder"])
 #########################################################
-
+ts_temp<- ts(df_env_filled$temp_filled,start=c(2002,1),end=c(2022,53),frequency=53) #53 indicates weekly
+plot(ts_temp)
+x11_fit <- seas(x=ts_temp)
+?autoplot(fit) +
+  ggtitle("X11 decomposition of electrical equipment index")

@@ -16,9 +16,10 @@ source(paste0(basepath,"/scripts/wavelet/plot_single_wt_arc.R"))
 #COMPUTE CONTOUR LINES FOR ANNUAL PERIOD
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-12_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-12_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
+
 load(paste0(basepath,"data/r_objects/2024-06-06_df_carbonC_filled_merged_super_res_morlet.RData"))
 #store dimensions of annual contours
 annual_lengths <- vector(length=length(super_res))
@@ -79,11 +80,12 @@ for(wavelet in 1:length(super_res)){
 annual_dims <- annual_dims %>% mutate(xmin=as.numeric(xmin),xmax=as.numeric(xmax),func_group = "Other")
 #store annual durations in dataframe with species and functional group labels
 df_annual = data.frame(annual_duration = annual_lengths,species=protist_tricho_label_merged,func_group = "Other")
+#create column with functional group 
 
 
 #load ifcb class list file that categories each species in a functional group
-func_group_list = c("Diatom","Dinoflagellate","Ciliate","Nano-Flag-Cocco","Metazoan","Other")
-func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nfg_label,metazoan_label,c("Other"))
+func_group_list = c("Diatom","Dinoflagellate","Ciliate","Misc. Nanoplankton","Metazoan","Synechococcus","Picoeukaryotes")
+func_group_labels <- list(diatom_labelC,dino_label,ciliate_label,nfg_label,metazoan_label,c("Synechococcus"),c("Pico_eukaryotes"))
 #create column with functional group for df annual
 for(func_group in 1:length(func_group_list)){
 reference=func_group_labels[[func_group]]
@@ -112,13 +114,14 @@ df_annual %>%group_by(func_group) %>%
 #complete bar plot 
 ####################################################################################
 #generating color codes
-my_colors <- RColorBrewer::brewer.pal(6, "Dark2")
+my_colors <- RColorBrewer::brewer.pal(7, "Dark2")
 map <- data.frame(func_group=func_group_list,colors=my_colors)
 color_code = left_join(df_annual[order(df_annual$annual_duration,df_annual$func_group),],map,by="func_group")$colors
 map_dict <- map$colors
 names(map_dict) <- map$func_group
 
 df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>%
+  filter(species %in% label_maybe_include)%>%
   mutate(species=factor(species,levels=species)) %>%
   ggplot() +
   geom_bar(aes(x= species,y=annual_duration,fill=func_group),
@@ -142,9 +145,43 @@ df_annual[order(df_annual$annual_duration,df_annual$func_group),] %>%
 ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_bar_all_",Sys.Date(),".png"),
        width=1500,height=3000,units="px",dpi=200)
 
+df_annual[order(df_annual$annual_duration,df_annual$func_group,decreasing=T),] %>%
+  filter(species %in% label_maybe_include)%>%
+  mutate(species=factor(species,levels=species)) %>%
+  ggplot() +
+  geom_bar(aes(x= species,y=annual_duration,fill=func_group),
+           stat="identity")+
+  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
+  ylab("Years with Annual Periodicity")+
+  xlab("Taxa")+
+  scale_y_continuous(breaks=seq(0,365*14,365*2),
+                     labels=seq(0,14,2),limits=c(0,365*14))+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    size = 0.75, linetype = "solid"),
+    panel.grid.major  = element_line(size = 0.25, linetype = 'solid',
+                                     colour = "gray"), 
+    panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "white"),
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust=0.95),
+    legend.justification = c("right", "top"),
+    legend.box.just = "right",
+    plot.margin = unit(c(0, 0.1, 0, 0.4), 
+                       "inches"),
+    legend.position = c(1, 1),
+    legend.title = element_text(size = 6), 
+    legend.text = element_text(size = 6))+
+  guides(fill = guide_legend(override.aes = list(size = 0.001)))
+
+          
+
+ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_bar_horizontal_all_",Sys.Date(),".png"),
+       width=3700,height=1600,units="px",dpi=300)
+
+
 head(df_annual)
 
-df_annual_pie <- df_annual %>% mutate(pie = case_when(annual_duration==5109 ~ "Full",
+df_annual_pie <- df_annual %>% filter(species%in% label_maybe_include) %>% mutate(pie = case_when(annual_duration==5109 ~ "Full",
                                      (annual_duration<5109 & annual_duration>0) ~ "Partial",
                                      annual_duration==0 ~ "None"))  %>% 
   group_by(pie) %>% # Variable to be transformed
@@ -162,7 +199,7 @@ ggplot(df_annual_pie, aes(x = "", y = perc, fill = pie)) +
   coord_polar(theta = "y")+theme_void()+
   guides(fill = guide_legend(title = "Periodicity")) 
 
-ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_pie_chart.png"),
+ggsave(filename=paste0(basepath,"figures/wavelet_transforms/annual_periodicity_pie_chart",Sys.Date(),".png"),
        width=800,height=600,units="px",dpi=200)
   
 ################################################################################
