@@ -9,11 +9,11 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-27_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-27_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
-load(paste0(basepath,"/data/r_objects/c_index_df_cor_2024-06-17.RData"))
-
+load(paste0(basepath,"/data/r_objects/c_index_df_cor_2024-06-27.RData"))
+load(paste0(basepath,"/data/r_objects/c_index_df_group_2024-06-27.RData"))
 ################################################################################
 #### HISTOGRAM of cyclity
 ###############################################################################
@@ -41,7 +41,6 @@ df_carbonC_wyear_mean %>% filter(year==y) %>% ggplot() +
 
 
 #introduce cyclic index of groups 
-load(paste0(basepath,"/"))
 c_index_group_cut <- c_index_group %>%
                       filter(func_group %in% c("Diatom_noDetritus",
                                         "Dinoflagellate",
@@ -52,7 +51,7 @@ rownames(c_index_group_cut) <- c("Diatom","Dinoflagellate","Ciliate","Misc. Nano
 
 #four groups in a facet grid as columns
 c_index %>% 
-  filter(species %in% label_maybe_include,
+  filter(taxa %in% label_maybe_include,
          func_group %in% c("Diatom","Dinoflagellate","Ciliate","Misc. Nanoplankton"))%>%
   ggplot() +
   geom_histogram(aes(x=max_xcorr,
@@ -75,7 +74,7 @@ ggsave(filename=paste0(basepath,
 
 
 c_index %>% 
-  filter(species %in% label_maybe_include,
+  filter(taxa %in% label_maybe_include,
          func_group %in% c("Diatom","Dinoflagellate","Ciliate","Misc. Nanoplankton"))%>%
   ggplot() +
   geom_histogram(aes(x=cyclicity_index,
@@ -95,7 +94,7 @@ ggsave(filename=paste0(basepath,
        width=800,height=1700,units="px",dpi=300)
 
 c_index %>% 
-  filter(species %in% label_maybe_include,
+  filter(taxa %in% label_maybe_include,
          func_group %in% c("Diatom","Dinoflagellate","Ciliate","Misc. Nanoplankton"))%>%
   ggplot() +
   geom_histogram(aes(x=cyclicity_index,
@@ -119,15 +118,14 @@ ggsave(filename=paste0(basepath,
 ################################################################################
 
 
-c_index  %>% filter(species %in% label_maybe_include)%>%
+c_index  %>% filter(taxa %in% label_maybe_include)%>%
   ggplot() + 
   geom_histogram(aes(x=cyclicity_index,y = after_stat(count/sum(count))),bins=10) +
   scale_y_continuous(labels = scales::percent)+
-  facet_grid()
   xlab("Cyclicity Index (Median Correlation)") + ylab("Percent") +
   theme_bw()
 
-c_index  %>% filter(species %in% label_maybe_include,func_group %in% c("Ciliate")) %>% ggplot() +
+c_index  %>% filter(taxa %in% label_maybe_include,func_group %in% c("Ciliate")) %>% ggplot() +
   geom_histogram(aes(cyclicity_index,fill=func_group,color=func_group,linetype=func_group),bins=15,alpha=0.5)+
   xlim(0,1)+  
   xlab("Cyclicity Index (Median Correlation)") + ylab("Count") + 
@@ -144,7 +142,7 @@ c_index  %>% filter(species %in% label_maybe_include,func_group %in% c("Ciliate"
                                     colour = "white")
   )
 
-c_index  %>% filter(species %in% label_maybe_include,func_group=="Misc. Nanoplankton") %>% ggplot() +
+c_index  %>% filter(taxa %in% label_maybe_include,func_group=="Misc. Nanoplankton") %>% ggplot() +
   geom_histogram(aes(cyclicity_index,fill=func_group,color=func_group,linetype=func_group),bins=10,alpha=0.5)+
   xlim(0,1)+  
   xlab("Cyclicity Index (Median Correlation)") + ylab("Count") + 

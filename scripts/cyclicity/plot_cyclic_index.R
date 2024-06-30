@@ -1,7 +1,7 @@
 basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
 list.of.packages <- c("RColorBrewer", "lubridate",
                       "ggplot2","tibbletime","dplyr","tidyr","zoo","stringr",
-                      "ggsignif","plotly","dtw","scales","patchwork")
+                      "ggsignif","plotly","dtw","scales","ggpubr")
 
 #find new packages and install them. require all packages in list
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -12,7 +12,7 @@ lapply(list.of.packages, require, character.only = TRUE)
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-12_df_carbon_labels.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-12_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
-load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-13.RData"))
+load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-27.RData"))
 
 ####################################################
 #PLOT individual correlation over time
@@ -51,13 +51,13 @@ map_dict <- map$colors
 names(map_dict) <- map$func_group
 
 
-bar_c_index_include <- c_index %>% filter(species %in% label_include)%>%
-  ggplot() + geom_bar(aes(x=reorder(species,+max_xcorr),
+bar_c_index_include <- c_index %>% filter(taxa %in% label_include)%>%
+  ggplot() + geom_bar(aes(x=reorder(taxa,+max_xcorr),
                           y=max_xcorr,
                           fill=func_group),
                       stat="identity")+
-  geom_errorbar(aes(x=reorder(species,+max_xcorr),
-                    y=cyclicity_index,ymin=max_xcorr-max_xcorr_sd,
+  geom_errorbar(aes(x=reorder(taxa,+max_xcorr),
+                    y=max_xcorr,ymin=max_xcorr-max_xcorr_sd,
                     ymax=max_xcorr+max_xcorr_sd),
                 color="black", width=.01) +
   scale_fill_manual(values=map_dict,name="Functional\nGroup")+
@@ -72,12 +72,12 @@ bar_c_index_include <- c_index %>% filter(species %in% label_include)%>%
     panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
                                     colour = "white")
   )
-bar_c_index_include_maybe <- c_index %>% filter(species %in% c(label_maybe_include))%>%
-  ggplot() + geom_bar(aes(x=reorder(species,+max_xcorr),
+bar_c_index_include_maybe <- c_index %>% filter(taxa %in% c(label_maybe_include))%>%
+  ggplot() + geom_bar(aes(x=reorder(taxa,+max_xcorr),
                           y=max_xcorr,
                           fill=func_group),
                       stat="identity")+
-  geom_errorbar(aes(x=reorder(species,+max_xcorr),
+  geom_errorbar(aes(x=reorder(taxa,+max_xcorr),
                     y=max_xcorr,ymin=max_xcorr-max_xcorr_sd,
                     ymax=max_xcorr+max_xcorr_sd),
                 color="black", width=.01) +
@@ -104,20 +104,19 @@ bar_c_index_include_maybe
 ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_maybe_lag_adjusted_error_bar_",Sys.Date(),".png"),
        width=1500,height=3000,units="px",dpi=200)
 
-#
 
-bar_c_index_include_maybe_split <- c_index %>% filter(species %in% label_maybe_include)%>%
-  ggplot() + geom_bar(aes(x=reorder(species,-max_xcorr),
+
+bar_c_index_include_maybe <- c_index %>% filter(taxa %in% c(label_maybe_include))%>%
+  ggplot() + geom_bar(aes(x=reorder(taxa,+max_xcorr),
                           y=max_xcorr,
                           fill=func_group),
                       stat="identity")+
-  geom_errorbar(aes(x=reorder(species,+max_xcorr),
-                    y=max_xcorr,ymin=max_xcorr-sd,
-                    ymax=max_xcorr+sd),
+  geom_errorbar(aes(x=reorder(taxa,+max_xcorr),
+                    y=max_xcorr,ymin=max_xcorr-max_xcorr_sd,
+                    ymax=max_xcorr+max_xcorr_sd),
                 color="black", width=.01) +
   scale_fill_manual(values=map_dict,name="Functional\nGroup")+
   ylab("Lag-Adjusted Cyclicity Index")+xlab("Taxa")+
-  scale_y_continuous(breaks=seq(-0.1,1,0.1))+
   # theme(axis.text.y = element_text(colour = color_code))+
   theme(
     panel.background = element_rect(fill = "white", colour = "black",
@@ -125,21 +124,58 @@ bar_c_index_include_maybe_split <- c_index %>% filter(species %in% label_maybe_i
     panel.grid.major  = element_line(size = 0.25, linetype = 'solid',
                                      colour = "gray"), 
     panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
-                                    colour = "white")
-  )+theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
-          legend.position = c(1, 1),
-          legend.justification = c("right", "top"),
-          legend.box.just = "right",
-          plot.margin = unit(c(0, 0, 0, 0.4), 
-                             "inches"),
-          legend.title = element_text(size = 6), 
-          legend.text = element_text(size = 6))+
-  guides(fill = guide_legend(override.aes = list(size = 0.1)))
-bar_c_index_include_maybe_split
+                                    colour = "white"))+
+      coord_flip()
 
 
 ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_maybe_lag_adjusted_error_bar_horiztonal_",Sys.Date(),".png"),
        width=4300,height=2000,units="px",dpi=300)
+
+
+########################3
+# combined
+#########################
+bar_c_index_include_maybe_half <- c_index %>% filter(taxa %in% c(label_maybe_include))%>%
+  ggplot() + geom_bar(aes(x=reorder(taxa,+max_xcorr),
+                          y=max_xcorr,
+                          fill=func_group),
+                      stat="identity")+
+  geom_errorbar(aes(x=reorder(taxa,+max_xcorr),
+                    y=max_xcorr,ymin=max_xcorr-max_xcorr_sd,
+                    ymax=max_xcorr+max_xcorr_sd),
+                color="black", width=.01) +
+  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
+  ylab("Lag-Adjusted Cyclicity Index")+xlab("Taxa")+
+  # theme(axis.text.y = element_text(colour = color_code))+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    size = 0.75, linetype = "solid"),
+    panel.grid.major  = element_line(size = 0.25, linetype = 'solid',
+                                     colour = "gray"), 
+    panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "white"),
+    legend.text = element_text(size=10))+
+  coord_flip()
+bar_c_index_include_maybe_half
+
+lag_heatmap <- df_merge_lag_max %>% filter(taxa %in% label_maybe_include) %>%
+  ggplot() +
+  geom_tile(aes(x=year,y=reorder(taxa,+laci),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#dc322f", low="#268bd2")+
+  theme_bw()+
+  theme(axis.text.y = element_blank(),axis.title.y=element_blank())+
+  labs(x="Year",y="Taxa",fill="Lag")+
+  scale_x_continuous(breaks=seq(2006,2022,2))
+
+lag_heatmap
+
+ggarrange(bar_c_index_include_maybe_half,lag_heatmap,labels=c("A","B"),
+          legend="top",ncol=2,nrow=1,
+          widths=c(1,0.5))
+
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_maybe_lag_adjusted_error_bar_combined_",Sys.Date(),".png"),
+        width=3000,height=3800,units="px",dpi=300)
+
 
 #################################################################################
 # Standard Deviation Bar Plot

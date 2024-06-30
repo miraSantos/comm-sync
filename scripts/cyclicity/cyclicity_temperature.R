@@ -21,27 +21,62 @@ head(df_env)
 df_env$date <- as.Date(df_env$days,format ="%d-%b-%Y")
 df_env$year <- year(df_env$date)
 df_env$week <- week(df_env$date)
+df_env$doy_numeric <- yday(df_env$date)
 
+
+df_env %>% ggplot() + 
+  geom_line(aes(x=doy_numeric,y=Beam_temperature_corrected,color=as.factor(year)))
+
+#covert data to weekly resolution
 df_env_weekly <-df_env %>% mutate(wyear=paste0(year(date),"-",week(date))) %>% 
   group_by(wyear) %>%
   summarise(mean_temp = mean(Beam_temperature_corrected,na.rm=T),
             mean_light = mean(AvgSolar,na.rm=T),
-            week=week,year=year)
+            week=week,year=year) %>% distinct()
 
 
+df_env_annual_means <- df_env_weekly %>% group_by(year) %>%
+  summarise(annual_max=max(mean_temp,na.rm=T),
+            annual_min=min(mean_temp,na.rm=T)) %>%
+  mutate(anomaly_summer = annual_max-mean(annual_max),
+         anomaly_winter = annual_min-mean(annual_min)) %>% 
+  pivot_longer(starts_with("anomaly"),
+               names_to="anomaly_season",
+               values_to="anomaly")
+head(df_env_annual_means)
+
+df_env_annual_means %>% filter(year>2005,year<2023) %>% ggplot() + 
+  geom_tile(aes(x = year,y=anomaly_season,fill=anomaly))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#dc322f", low="#268bd2")+
+  scale_x_continuous(name="Year",breaks=seq(2006,2022,2))+
+  labs(y="Seasonal Anomaly")
+  
+#compute overall weekly mean
+week_clim <- df_env %>% group_by(week) %>%
+  reframe(mean_temp=mean(Beam_temperature_corrected,na.rm=T),
+            mean_light = mean(AvgSolar,na.rm=T),
+            week=week)
+
+sum(df_env_weekly[df_env_weekly$year==2008,"mean_temp"][29:41,] - 
+  df_env_weekly[df_env_weekly$year==2010,"mean_temp"][29:41,])
 
 
-week_clim <- df_env %>% group_by(week) %>% summarise(mean_temp=mean(Beam_temperature_corrected,na.rm=T),
-                                                     mean_light = mean(AvgSolar,na.rm=T),
-                                                     week=week)
-
-
-df_env_weekly %>% ggplot + geom_line(aes(x=week,y=mean_temp,
-                                   color=as.factor(year)),alpha=0.5)+
-  geom_line(data=week_clim,aes(x=week,y=mean_temp),linetype="dashed")+
+df_env_weekly %>%
+  filter(year %in% c(2008,2021)) %>%
+  ggplot +
+  geom_line(aes(x=week,
+                y=mean_temp,
+                color=as.factor(year)),
+            alpha=0.5)+
+  geom_line(data=week_clim,
+            aes(x=week,y=mean_temp),
+            linetype="dashed")+
   scale_x_continuous(breaks=seq(1,53,4))+
+  scale_y_continuous(breaks=seq(0,25,1))+
   labs(color="Year",x="Week",y=expression("Temperature ("*degree*"C)"))+
-  guides(color=guide_legend(ncol=2))
+  guides(color=guide_legend(ncol=2))+
+  theme_bw()
+
 
 ggsave(filename=paste0(basepath,"/figures/temperature_time_series_",Sys.Date(),".png"),
        width=1800,height=1300,units="px",dpi=300)
@@ -52,6 +87,14 @@ df_env_weekly %>% ggplot + geom_line(aes(x=week,y=mean_light,
   scale_x_continuous(breaks=seq(1,53,4))+
   labs(color="Year",x="Week",y=expression("Average Daily Integrated Solar Irradiance (Wm"^-2*")"))
 
+
+
+df_env_weekly %>% filter(year==2008)%>% ggplot +
+  geom_line(aes(x=week,y=mean_light,
+                                         color=as.factor(year)),alpha=0.5)+
+  geom_line(data=week_clim,aes(x=week,y=mean_light),linetype="dashed")+
+  scale_x_continuous(breaks=seq(1,53,4))+
+  labs(color="Year",x="Week",y=expression("Average Daily Integrated Solar Irradiance (Wm"^-2*")"))
 
 
 
@@ -140,26 +183,19 @@ dtw(y,z)$normalizedDistance
 #take mean of cyclic index
 c_index_median = median(df_cor[,"mean_temp"])
 c_index_sd <- sd(df_cor[,"mean_temp"])
-c_index_max_xcorr <-apply(df_max_xcorr[,"mean_temp"], 2, mean,na.rm=T)
-c_index_max_xcorr_sd <-apply(df_max_xcorr[,"mean_temp"], 2, sd,na.rm=T)
+c_index_max_xcorr <-mean(df_max_xcorr[,"mean_temp"],na.rm=T)
+c_index_max_xcorr_sd <-sd(df_max_xcorr[,"mean_temp"],na.rm=T)
 c_index_lag_corr <-apply(df_lag_xcorr[,"mean_temp"], 2, mean,na.rm=T)
 
-df_max_xcorr %>% filter(year!=2019) %>% summarise(mean(mean_temp))
-df_lag_xcorr %>% filter(year!=2019) %>% summarise(mean(mean_temp))
 
-df_lag_xcorr$var <- "temperature"
-df_lag_xcorr %>% ggplot() + 
-  geom_tile(aes(x = year, y=var,fill = mean_temp))+
-  scale_fill_gradient2(midpoint = 0,
-                       mid="#eee8d5", high="#dc322f", low="#268bd2")
-# c_index_median_dtw = apply(df_dtw[,protist_tricho_labelC],2,median,na.rm=T)
+
 # consistency.fun <- function(annual_peak){1 - sd(annual_peak - mean(annual_peak))/mean(annual_peak)}
 # consistency_index <- apply(annual_peak[,protist_tricho_labelC],2,consistency.fun)
 
 c_index_median
 c_index_sd
 df_cor
-
+df_max_xcorr
 plot(df_cor$temp_interpolated)
 
 individual_year <- ref_year_interp %>% ungroup() %>% filter(year == 2006) %>% select(temp_interpolated)

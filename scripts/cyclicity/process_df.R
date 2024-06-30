@@ -93,11 +93,14 @@ df_carbonC <- df_carbon %>%
 df_carbonC$doy_numeric <- yday(df_carbonC$date)
 
 names(df_carbonC)
-
 #add and remove
 protist_tricho_labelC <- protist_tricho_label %>%  setdiff(list_remove) %>% append(list_add)
-diatom_labelC <- diatom_label %>% setdiff(list_remove) %>% append(list_add)
-
+diatom_labelC <- diatom_label %>%  setdiff(list_remove) %>%
+  append(c("Guinardia_delicatula_merged","Pseudo_nitzschia_merged","Thalassionema_merged",
+           "Chaetoceros_merged","Cylindrotheca_merged"))
+dino_labelC <- dino_label %>% setdiff(list_remove) %>% append(c("Dinophyceae_merged","Dinophysis_merged"))
+ciliate_labelC <- ciliate_label %>% setdiff(list_remove) %>% append(c("Strombidium_merged","Tintinnina_merged"))
+nfg_labelC <- nfg_label %>% setdiff(list_remove) %>% append(c("Chrysochromulina_merged", "coccolithophorid_merged"))
 ###### QC CHECKS
 setdiff(protist_tricho_labelC,opt_thresh$Class) #should have 2 syn and pico euks
 setdiff(opt_thresh$Class,protist_tricho_labelC) #should be 0
