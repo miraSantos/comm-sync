@@ -27,7 +27,7 @@ str(df_merge_lag_max)
 df_merge_lag_max %>% filter(taxa %in% label_maybe_include) %>%
   ggplot() +
   geom_tile(aes(x=year,y=reorder(taxa,+laci),fill=lag))+
-  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#dc322f", low="#268bd2")+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD")+
   theme_bw()+
   labs(x="Year",y="Taxa",fill="Lag")+
   scale_x_continuous(breaks=seq(2006,2022,2))

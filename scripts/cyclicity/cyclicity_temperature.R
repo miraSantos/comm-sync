@@ -38,9 +38,9 @@ df_env_weekly <-df_env %>% mutate(wyear=paste0(year(date),"-",week(date))) %>%
 df_env_annual_means <- df_env_weekly %>% group_by(year) %>%
   summarise(annual_max=max(mean_temp,na.rm=T),
             annual_min=min(mean_temp,na.rm=T)) %>%
-  mutate(anomaly_summer = annual_max-mean(annual_max),
-         anomaly_winter = annual_min-mean(annual_min)) %>% 
-  pivot_longer(starts_with("anomaly"),
+  mutate(summer = annual_max-mean(annual_max),
+         winter = annual_min-mean(annual_min)) %>% 
+  pivot_longer(c("summer","winter"),
                names_to="anomaly_season",
                values_to="anomaly")
 head(df_env_annual_means)
@@ -49,7 +49,10 @@ df_env_annual_means %>% filter(year>2005,year<2023) %>% ggplot() +
   geom_tile(aes(x = year,y=anomaly_season,fill=anomaly))+
   scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#dc322f", low="#268bd2")+
   scale_x_continuous(name="Year",breaks=seq(2006,2022,2))+
-  labs(y="Seasonal Anomaly")
+  labs(y="Season")+theme(plot.margin =unit(c(1,1,0,1),"cm"))
+
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/lag/anomaly_temp_for_lag_",Sys.Date(),".png"),
+       width=2000,height=450,units="px",dpi=300)
   
 #compute overall weekly mean
 week_clim <- df_env %>% group_by(week) %>%

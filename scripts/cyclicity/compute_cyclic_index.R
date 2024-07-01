@@ -3,7 +3,8 @@ list.of.packages <- c("RColorBrewer", "lubridate",
                       "ggplot2","tibbletime","dplyr","tidyr","zoo","stringr",
                       "ggsignif","plotly","dtw","scales","patchwork")
 
-#find new packages and install them. require all packages in list
+#find new 
+packages and install them. require all packages in list
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
@@ -25,7 +26,8 @@ df_carbonC$week <- week(df_carbonC$date)
 #compute weekly mean
 week_means <- df_carbonC %>% 
   group_by(week) %>%
-  summarize_at(protist_tricho_labelC,mean,na.rm=T)
+  summarize_at(protist_tricho_labelC,mean,na.rm=T) %>%
+  mutate_at(protist_tricho_labelC,sqrt) %>% select(all_of(protist_tricho_labelC))
 
 df_carbonC$year <- year(df_carbonC$date)
 df_carbonC$wyear <- paste0(df_carbonC$
@@ -58,9 +60,6 @@ ref_year_interp <- df_carbonC_wyear_mean%>%
             list(~na.approx(object=.,x=week,xout=seq(1,53,1),
                             rule=2,ties=mean,method="linear")))
 
-#average weekly annual cycle across entire time series
-week_climatology = week_means %>% select(all_of(protist_tricho_labelC)) %>%
-                mutate_at(protist_tricho_labelC,quadroot)
 
 #create dataframe to store correlations
 df_cor <- as.data.frame(matrix(nrow=0,ncol=length(protist_tricho_labelC)+1))
@@ -77,7 +76,7 @@ for(y in 1:length(years)){
   print(years[y])
   #extract week year means of a specific year
   individual_year <- df_carbonC_wyear_mean %>% ungroup() %>%
-    mutate_at(protist_tricho_labelC,quadroot) %>%
+    mutate_at(protist_tricho_labelC,sqrt) %>%
     filter(year == years[y]) %>% select(protist_tricho_labelC,week) %>% 
     drop_na()
   #retrieve indices of the week to line up with the climatology
