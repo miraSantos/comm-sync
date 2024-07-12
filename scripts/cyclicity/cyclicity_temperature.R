@@ -15,71 +15,38 @@ load(paste0(basepath,"/data/r_objects/2024-06-04_df_carbonC_filled_super_res_pau
 load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-13.RData"))
 
 
-
 df_env <- read.csv(paste0(basepath,"/data/mvco/mvco_daily_2023.csv"))
 head(df_env)
 df_env$date <- as.Date(df_env$days,format ="%d-%b-%Y")
 df_env$year <- year(df_env$date)
 df_env$week <- week(df_env$date)
-df_env$doy_numeric <- yday(df_env$date)
 
-
-df_env %>% ggplot() + 
-  geom_line(aes(x=doy_numeric,y=Beam_temperature_corrected,color=as.factor(year)))
-
-#covert data to weekly resolution
 df_env_weekly <-df_env %>% mutate(wyear=paste0(year(date),"-",week(date))) %>% 
   group_by(wyear) %>%
   summarise(mean_temp = mean(Beam_temperature_corrected,na.rm=T),
             mean_light = mean(AvgSolar,na.rm=T),
-            week=week,year=year) %>% distinct()
+            week=week,year=year,date=date)
 
+metseasons <- c(
+  "01" = "DJF", "02" = "DJF",
+  "03" = "MAM", "04" = "MAM", "05" = "MAM",
+  "06" = "JJA", "07" = "JJA", "08" = "JJA",
+  "09" = "SON", "10" = "SON", "11" = "SON",
+  "12" = "DJF")
 
-df_env_annual_means <- df_env_weekly %>% group_by(year) %>%
-  summarise(annual_max=max(mean_temp,na.rm=T),
-            annual_min=min(mean_temp,na.rm=T)) %>%
-  mutate(summer = annual_max-mean(annual_max),
-         winter = annual_min-mean(annual_min)) %>% 
-  pivot_longer(c("summer","winter"),
-               names_to="anomaly_season",
-               values_to="anomaly")
-head(df_env_annual_means)
+df_env_weekly <- df_env_weekly %>% mutate(season = metseasons[format(date, "%m")],
+                         syear = paste0(year,"_",season))
 
-df_env_annual_means %>% filter(year>2005,year<2023) %>% ggplot() + 
-  geom_tile(aes(x = year,y=anomaly_season,fill=anomaly))+
-  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#dc322f", low="#268bd2")+
-  scale_x_continuous(name="Year",breaks=seq(2006,2022,2))+
-  labs(y="Season")+theme(plot.margin =unit(c(1,1,0,1),"cm"))
+week_clim <- df_env %>% group_by(week) %>% summarise(mean_temp=mean(Beam_temperature_corrected,na.rm=T),
+                                                     mean_light = mean(AvgSolar,na.rm=T),
+                                                     week=week)
 
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/lag/anomaly_temp_for_lag_",Sys.Date(),".png"),
-       width=2000,height=450,units="px",dpi=300)
-  
-#compute overall weekly mean
-week_clim <- df_env %>% group_by(week) %>%
-  reframe(mean_temp=mean(Beam_temperature_corrected,na.rm=T),
-            mean_light = mean(AvgSolar,na.rm=T),
-            week=week)
-
-sum(df_env_weekly[df_env_weekly$year==2008,"mean_temp"][29:41,] - 
-  df_env_weekly[df_env_weekly$year==2010,"mean_temp"][29:41,])
-
-
-df_env_weekly %>%
-  filter(year %in% c(2008,2021)) %>%
-  ggplot +
-  geom_line(aes(x=week,
-                y=mean_temp,
-                color=as.factor(year)),
-            alpha=0.5)+
-  geom_line(data=week_clim,
-            aes(x=week,y=mean_temp),
-            linetype="dashed")+
+df_env_weekly %>% ggplot + geom_line(aes(x=week,y=mean_temp,
+                                   color=as.factor(year)),alpha=0.5)+
+  geom_line(data=week_clim,aes(x=week,y=mean_temp),linetype="dashed")+
   scale_x_continuous(breaks=seq(1,53,4))+
-  scale_y_continuous(breaks=seq(0,25,1))+
   labs(color="Year",x="Week",y=expression("Temperature ("*degree*"C)"))+
-  guides(color=guide_legend(ncol=2))+
-  theme_bw()
-
+  guides(color=guide_legend(ncol=2))
 
 ggsave(filename=paste0(basepath,"/figures/temperature_time_series_",Sys.Date(),".png"),
        width=1800,height=1300,units="px",dpi=300)
@@ -91,24 +58,24 @@ df_env_weekly %>% ggplot + geom_line(aes(x=week,y=mean_light,
   labs(color="Year",x="Week",y=expression("Average Daily Integrated Solar Irradiance (Wm"^-2*")"))
 
 
-
-df_env_weekly %>% filter(year==2008)%>% ggplot +
-  geom_line(aes(x=week,y=mean_light,
-                                         color=as.factor(year)),alpha=0.5)+
-  geom_line(data=week_clim,aes(x=week,y=mean_light),linetype="dashed")+
-  scale_x_continuous(breaks=seq(1,53,4))+
-  labs(color="Year",x="Week",y=expression("Average Daily Integrated Solar Irradiance (Wm"^-2*")"))
-
-
-
 df_env= df_env %>% filter(year>=2006)
 week <- seq(1,53,1)
 years <- seq(min(df_env$year),max(df_env$year),1)
 week_list <- rep(week,length(years))
 year_list <- rep(years,53)[order(rep(years,53))]
-dfweek <- data.frame(wyear=paste0(year_list,"-",week_list),week=week_list,year=year_list)
+
+dfweek <- data.frame(wyear=paste0(year_list,"-",week_list),
+                     week=week_list,year=year_list)
+
+as.Date(dfweek,)
+
 df_env$year <- year(df_env$date)
 df_env$week<-week(df_env$date)
+
+dfweek <- data.frame(date=seq(as.Date("2006-01-01"),
+                              as.Date("2023-12-31"),by="1 week"))
+dfweek <- dfweek %>% mutate(week = week(date),year=year(date),
+                            month=)
 
 
 week_means <- df_env %>% 
@@ -118,7 +85,7 @@ week_means <- df_env %>%
 
 #compute mean temperature for each week of the year
 df_env_wyear_mean <-df_env_weekly %>%
-  select(wyear,mean_temp,mean_light,year,week) %>%
+  select(wyear,mean_temp,mean_light,year,week,syear) %>%
   group_by(wyear) %>%
   mutate_at(c("mean_temp","mean_light"),mean,na.rm=T) %>%
   distinct(wyear, .keep_all=TRUE) %>%
@@ -127,7 +94,7 @@ df_env_wyear_mean <-df_env_weekly %>%
 #approximate annual cycle with interpolation 
 
 ref_year_interp_env <-  df_env_wyear_mean%>%
-  left_join(dfweek,.,by=c("wyear","week","year"))%>%
+  left_join(dfweek,.,by=c("wyear","week","year","syear"))%>%
   group_by(year) %>%
   mutate_at(c("mean_temp"),
             list(~na.approx(object=.,x=week,xout=seq(1,53,1),
@@ -186,19 +153,26 @@ dtw(y,z)$normalizedDistance
 #take mean of cyclic index
 c_index_median = median(df_cor[,"mean_temp"])
 c_index_sd <- sd(df_cor[,"mean_temp"])
-c_index_max_xcorr <-mean(df_max_xcorr[,"mean_temp"],na.rm=T)
-c_index_max_xcorr_sd <-sd(df_max_xcorr[,"mean_temp"],na.rm=T)
+c_index_max_xcorr <-apply(df_max_xcorr[,"mean_temp"], 2, mean,na.rm=T)
+c_index_max_xcorr_sd <-apply(df_max_xcorr[,"mean_temp"], 2, sd,na.rm=T)
 c_index_lag_corr <-apply(df_lag_xcorr[,"mean_temp"], 2, mean,na.rm=T)
 
+df_max_xcorr %>% filter(year!=2019) %>% summarise(mean(mean_temp))
+df_lag_xcorr %>% filter(year!=2019) %>% summarise(mean(mean_temp))
 
-
+df_lag_xcorr$var <- "temperature"
+df_lag_xcorr %>% ggplot() + 
+  geom_tile(aes(x = year, y=var,fill = mean_temp))+
+  scale_fill_gradient2(midpoint = 0,
+                       mid="#eee8d5", high="#dc322f", low="#268bd2")
+# c_index_median_dtw = apply(df_dtw[,protist_tricho_labelC],2,median,na.rm=T)
 # consistency.fun <- function(annual_peak){1 - sd(annual_peak - mean(annual_peak))/mean(annual_peak)}
 # consistency_index <- apply(annual_peak[,protist_tricho_labelC],2,consistency.fun)
 
 c_index_median
 c_index_sd
 df_cor
-df_max_xcorr
+
 plot(df_cor$temp_interpolated)
 
 individual_year <- ref_year_interp %>% ungroup() %>% filter(year == 2006) %>% select(temp_interpolated)

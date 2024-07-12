@@ -106,7 +106,7 @@ ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_med
 
 
 
-bar_c_index_include_maybe <- c_index %>% filter(taxa %in% c(label_maybe_include))%>%
+bar_c_index_include_maybe_horizontal <- c_index %>% filter(taxa %in% c(label_maybe_include))%>%
   ggplot() + geom_bar(aes(x=reorder(taxa,+max_xcorr),
                           y=max_xcorr,
                           fill=func_group),
@@ -124,8 +124,32 @@ bar_c_index_include_maybe <- c_index %>% filter(taxa %in% c(label_maybe_include)
     panel.grid.major  = element_line(size = 0.25, linetype = 'solid',
                                      colour = "gray"), 
     panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
-                                    colour = "white"))+
-      coord_flip()
+                                    colour = "white"))
+  
+bar_c_index_include_maybe_horizontal <- c_index %>% filter(taxa %in% c(label_maybe_include))%>%
+  ggplot() + geom_bar(aes(x=reorder(taxa,-max_xcorr),
+                          y=max_xcorr,
+                          fill=func_group),
+                      stat="identity")+
+  geom_errorbar(aes(x=reorder(taxa,+max_xcorr),
+                    y=max_xcorr,ymin=max_xcorr-max_xcorr_sd,
+                    ymax=max_xcorr+max_xcorr_sd),
+                color="black", width=.01) +
+  scale_fill_manual(values=map_dict,name="Functional\nGroup")+
+  ylab("Lag-Adjusted Cyclicity Index")+xlab("Taxa")+
+  # theme(axis.text.y = element_text(colour = color_code))+
+  theme(
+    panel.background = element_rect(fill = "white", colour = "black",
+                                    size = 0.75, linetype = "solid"),
+    panel.grid.major  = element_line(size = 0.25, linetype = 'solid',
+                                     colour = "gray"), 
+    panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                    colour = "white"),
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust=0.95),
+    plot.margin=unit(c(0,0,0,1),units="cm"))
+  
+#top,right,bottom,left
+bar_c_index_include_maybe_horizontal
 
 
 ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_maybe_lag_adjusted_error_bar_horiztonal_",Sys.Date(),".png"),
