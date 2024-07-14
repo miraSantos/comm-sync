@@ -23,6 +23,8 @@ df_carbonC$doy_numeric <- yday(df_carbonC$date)
 df_carbonC$week <- week(df_carbonC$date)
 df_carbonC$year <- year(df_carbonC$date)
 
+
+
 metseasons <- c(
   "01" = "DJF", "02" = "DJF",
   "03" = "MAM", "04" = "MAM", "05" = "MAM",

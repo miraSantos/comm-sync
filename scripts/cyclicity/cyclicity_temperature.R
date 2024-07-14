@@ -11,8 +11,8 @@ lapply(list.of.packages, require, character.only = TRUE)
 
 
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
-load(paste0(basepath,"/data/r_objects/2024-06-04_df_carbonC_filled_super_res_paul.RData"))
-load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-13.RData"))
+load(paste0(basepath,"/data/r_objects/2024-06-05_df_carbonC_filled_super_res_paul.RData"))
+load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-27.RData"))
 
 
 df_env <- read.csv(paste0(basepath,"/data/mvco/mvco_daily_2023.csv"))
@@ -59,24 +59,23 @@ df_env_weekly %>% ggplot + geom_line(aes(x=week,y=mean_light,
 
 
 df_env= df_env %>% filter(year>=2006)
-week <- seq(1,53,1)
-years <- seq(min(df_env$year),max(df_env$year),1)
-week_list <- rep(week,length(years))
-year_list <- rep(years,53)[order(rep(years,53))]
-
-dfweek <- data.frame(wyear=paste0(year_list,"-",week_list),
-                     week=week_list,year=year_list)
-
-as.Date(dfweek,)
-
 df_env$year <- year(df_env$date)
 df_env$week<-week(df_env$date)
 
-dfweek <- data.frame(date=seq(as.Date("2006-01-01"),
-                              as.Date("2023-12-31"),by="1 week"))
-dfweek <- dfweek %>% mutate(week = week(date),year=year(date),
-                            month=)
-
+# week <- seq(1,53,1)
+# years <- seq(min(df_env$year),max(df_env$year),1)
+# week_list <- rep(week,length(years))
+# year_list <- rep(years,53)[order(rep(years,53))]
+# 
+# dfweek <- data.frame(wyear=paste0(year_list,"-",week_list),
+#                      week=week_list,year=year_list)
+# 
+# as.Date(paste0(dfweek$week,dfweek))
+dfweek <- data.frame(date=seq(as.Date("2006-01-01"),as.Date("2022-12-31"),by="1 week"))
+dfweek <- dfweek %>% mutate(week=week(date),year=year(date),month=month(date),
+                            season = metseasons[format(date, "%m")],
+                            syear = paste0(year,"_",season),
+                            wyear=paste0(year,"-",week))
 
 week_means <- df_env %>% 
   group_by(week) %>%
