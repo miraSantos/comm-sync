@@ -8,7 +8,7 @@ lapply(list.of.packages, require, character.only = TRUE)
 #simulate change in timing
 num_years = 10
 #generate data frame to store weekly simulated data
-df=data.frame(x = seq(1,53*num_years,1),woy=rep(seq(1,53,1),num_years))
+df=data.frame(x = seq(1,53*num_years,1),week=rep(seq(1,53,1),num_years))
 #create year vector to mark each year in the data set
 df$year <- rep(seq(1,num_years,1),each=53)
 df$baseline <- sin(B*df$x)+10
@@ -43,7 +43,7 @@ df$y_noise=sin(B*df$x)+20+df$noise
 plot(df$x,df$y_noise,type="l")
 
 #compute weekly climatology and add to data frame
-df_means <- df %>% group_by(woy) %>% 
+df_means <- df %>% group_by(week) %>% 
   summarise(y_amp_mean = mean(y_amp),
             y_phase_mean=mean(y_phase),
             y_noise_mean = mean(y_noise))
@@ -77,9 +77,9 @@ var(df_local_c_index$noise_cor)
 #######################################################
 #Plot change in amplitude
 #######################################################
-ggplot() + geom_line(data=df,aes(x=woy,y=y_amp,color=as.factor(year)),
+ggplot() + geom_line(data=df,aes(x=week,y=y_amp,color=as.factor(year)),
                      size=1,alpha=0.5)+
-  geom_line(data=df_means,aes(x=woy,y=y_amp_mean),
+  geom_line(data=df_means,aes(x=week,y=y_amp_mean),
             color="black",linetype="dashed",size=1)+
   theme_bw() +
   ggtitle("Amplitude change") +
@@ -101,9 +101,9 @@ df_local_c_index %>% ggplot() +
 #Plot change in timing of bloom
 ################################################################################
 ggplot() + 
-  geom_line(data=df,aes(x=woy,y=y_phase,color=as.factor(year)),size=1,
+  geom_line(data=df,aes(x=week,y=y_phase,color=as.factor(year)),size=1,
                      alpha=0.5)+
-  geom_line(data=df_means,aes(x=woy,y=y_phase_mean),
+  geom_line(data=df_means,aes(x=week,y=y_phase_mean),
             color="black",
             linetype="dashed",size=1)+
   theme_bw()+
@@ -126,9 +126,9 @@ df_local_c_index %>% ggplot() +
 #################################################################################
 ################################################################################
 
-ggplot() + geom_line(data=df,aes(x=woy,y=y_noise,color=as.factor(year)),
+ggplot() + geom_line(data=df,aes(x=week,y=y_noise,color=as.factor(year)),
                      size=1,alpha=0.5)+
-  geom_line(data=df_means,aes(x=woy,y=y_noise_mean),
+  geom_line(data=df_means,aes(x=week,y=y_noise_mean),
             color="black",linetype="dashed",size=1)+
   theme_bw() +
   ggtitle("Noise change") +
