@@ -103,9 +103,6 @@ df_local_c_index %>% ggplot() +
 ggplot() + 
   geom_line(data=df,aes(x=week,y=y_phase,color=as.factor(year)),size=1,
                      alpha=0.5)+
-  geom_line(data=df_means,aes(x=week,y=y_phase_mean),
-            color="black",
-            linetype="dashed",size=1)+
   theme_bw()+
   ggtitle("Phase shift") +
   labs(color="Year",x="Week of Year",y="Amplitude")

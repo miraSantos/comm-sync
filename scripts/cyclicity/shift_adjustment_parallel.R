@@ -1,4 +1,4 @@
-basepath = "/home/mira/MIT-WHOI/github_repos/comm-sync/"
+basepath = ""
 list.of.packages <- c("RColorBrewer", "lubridate",
                       "ggplot2","tibbletime","dplyr","tidyr","zoo","stringr",
                       "ggsignif","plotly","dtw","scales","patchwork","pso")
@@ -11,8 +11,9 @@ lapply(list.of.packages, require, character.only = TRUE)
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbon_labels.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
-load(paste0(basepath,"/data/r_objects/2024-06-04_df_carbonC_filled_super_res_paul.RData"))
 
+args = commandArgs(trailingOnly=TRUE)
+jj = args[1]
 
 #add date time objects
 #map months to seasons
@@ -127,23 +128,23 @@ cor_season <- function(par,df,taxa,shifts){
 }
 
 cor_year <- function(par,df,taxa,shifts){
-    shifts[["d"]] = round(par,digits=0)
-    df$t = index(df)
-    df_shifts <- left_join(df[,c("year","week","t")],shifts,by="year") %>%
+  shifts[["d"]] = round(par,digits=0)
+  df$t = index(df)
+  df_shifts <- left_join(df[,c("year","week","t")],shifts,by="year") %>%
     #introduce d and set floor and ceiling when adding lag goes out of bounds
     mutate(t_shifted = case_when(d>0 ~ pmin(t + d,max(df$t)),
                                  d<0 ~ pmax(t + d,1),
                                  d==0 ~ t))
-    #get abundance at shifted indices
-    var_shifted = df[df_shifts$t_shifted,] 
-    # get mean weekly abundance at the shifted indices
-    mean_adjusted = df[df_shifts$t_shifted,] %>% group_by(week) %>% summarise_at(taxa,mean,na.rm=T)
-    colnames(mean_adjusted)<-c("week","mean")
-    df_mean_a = left_join(var_shifted[c("year","week",taxa)],mean_adjusted,by="week")
-    colnames(df_mean_a) <- c("year","week","var_shifted","mean")
-    cor = df_mean_a %>% group_by(year) %>% summarise(cor=cor(var_shifted,mean))
-    return(cor)
-  }
+  #get abundance at shifted indices
+  var_shifted = df[df_shifts$t_shifted,] 
+  # get mean weekly abundance at the shifted indices
+  mean_adjusted = df[df_shifts$t_shifted,] %>% group_by(week) %>% summarise_at(taxa,mean,na.rm=T)
+  colnames(mean_adjusted)<-c("week","mean")
+  df_mean_a = left_join(var_shifted[c("year","week",taxa)],mean_adjusted,by="week")
+  colnames(df_mean_a) <- c("year","week","var_shifted","mean")
+  cor = df_mean_a %>% group_by(year) %>% summarise(cor=cor(var_shifted,mean))
+  return(cor)
+}
 
 
 #expand grid of season per year
@@ -164,17 +165,17 @@ maxit = 1
 plankton_list_i = protist_tricho_labelC
 #find optimal set of shifts per season of year that minimize RSS for an individual taxon
 RSS_optim_season <- psoptim(par=shifts_season$d,fn=RSS_season,df=df_carbonC_wyear_mean,
-                           taxa=plankton_list_i[jj],
-                           lower=rep(lower_lim,length(years)),
-                     upper=rep(upper_lim,length(years)),
-                     control=list(maxit=maxit))
+                            taxa=plankton_list_i[jj],
+                            lower=rep(lower_lim,length(years)),
+                            upper=rep(upper_lim,length(years)),
+                            control=list(maxit=maxit))
 
 #find optimal set of shifts per year that minimize RSS for an individual taxon
 RSS_optim_year <- psoptim(par=shifts_year$d,fn=RSS_year,df=df_carbonC_wyear_mean,
-                     taxa=plankton_list_i[jj],shifts=shifts_year,
-                     lower=rep(lower_lim,length(years)),
-                     upper=rep(upper_lim,length(years)),
-                     control=list(maxit=maxit))
+                          taxa=plankton_list_i[jj],shifts=shifts_year,
+                          lower=rep(lower_lim,length(years)),
+                          upper=rep(upper_lim,length(years)),
+                          control=list(maxit=maxit))
 
 #find correlation between each season of year and the mean seasonal cycle
 cor_season <- cor_season(par=RSS_optim_season$par,df=df_carbonC_wyear_mean,taxa=plankton_list_i[jj],shifts=shifts_season)
