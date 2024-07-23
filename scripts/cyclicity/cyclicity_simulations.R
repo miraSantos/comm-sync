@@ -14,16 +14,16 @@ df$year <- rep(seq(1,num_years,1),each=53)
 df$baseline <- sin(B*df$x)+10
 
 #set period to weekly
-period=53
+period=53*2
 B=(2*pi)/period
 
 #create signal with varying amplitudes each year
-amp_var = seq(10,100000,length.out=num_years)
+amp_var = seq(100,10000,length.out=num_years)
 df$A=rep(amp_var,each=53)
 noise=rnorm(length(df$A),mean=0,sd=2)
 df$y_amp=df$A*sin(B*df$x)+10+noise
 
-plot(df$x,df$y_amp)
+plot(df$x,abs(df$y_amp))
 
 #create signal with varying phase each year
 max_shift = 10 #max number weeks to shift
@@ -77,10 +77,11 @@ var(df_local_c_index$noise_cor)
 #######################################################
 #Plot change in amplitude
 #######################################################
-ggplot() + geom_line(data=df,aes(x=week,y=y_amp,color=as.factor(year)),
+ggplot() + geom_line(data=df,aes(x=week,y=abs(y_amp),color=as.factor(year)),
                      size=1,alpha=0.5)+
-  geom_line(data=df_means,aes(x=week,y=y_amp_mean),
-            color="black",linetype="dashed",size=1)+
+  # geom_line(data=df_means,aes(x=week,y=y_amp_mean),
+  #           color="black",linetype="dashed",size=1)+
+  scale_y_log10()+
   theme_bw() +
   ggtitle("Amplitude change") +
   labs(color="Year",x="Week of Year",y="Amplitude")
@@ -101,9 +102,10 @@ df_local_c_index %>% ggplot() +
 #Plot change in timing of bloom
 ################################################################################
 ggplot() + 
-  geom_line(data=df,aes(x=week,y=y_phase,color=as.factor(year)),size=1,
+  geom_line(data=df,aes(x=week,y=y_phase+10000,color=as.factor(year)),size=1,
                      alpha=0.5)+
   theme_bw()+
+  scale_y_log10()+
   ggtitle("Phase shift") +
   labs(color="Year",x="Week of Year",y="Amplitude")
 
