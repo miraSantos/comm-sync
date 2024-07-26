@@ -12,7 +12,6 @@ lapply(list.of.packages, require, character.only = TRUE)
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbon_labels.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
-# load(paste0(basepath,"/data/r_objects/2024-06-04_df_carbonC_filled_super_res_paul.RData"))
 
 
 #add date time objects

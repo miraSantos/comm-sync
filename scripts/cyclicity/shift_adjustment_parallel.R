@@ -1,19 +1,25 @@
-basepath = ""
+basepath = "/vortexfs1/scratch/msantos/shift/"
 list.of.packages <- c("RColorBrewer", "lubridate",
                       "ggplot2","tibbletime","dplyr","tidyr","zoo","stringr",
-                      "ggsignif","plotly","dtw","scales","patchwork","pso")
+                      "ggsignif","scales","patchwork","pso")
 
 #find new packages and install them. require all packages in list
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages)
+if(length(new.packages)) install.packages(new.packages,repos='http://cran.us.r-project.org')
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/2024-06-13_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/2024-06-13_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 
 args = commandArgs(trailingOnly=TRUE)
-jj = args[1]
+jj = as.numeric(args[1])
+print(paste("index",jj))
+
+#set lower and upper lim for the shift value
+lower_lim=-4
+upper_lim=4
+maxit = 5000
 
 #add date time objects
 #map months to seasons
@@ -109,7 +115,8 @@ RSS_year <- function(par,df,taxa,shifts){
 
 cor_season <- function(par,df,taxa,shifts){
   df$t = index(df)
-  df_shifts <- left_join(df[,c("year","week","t")],shifts,by="year") %>%
+  df_shifts <- left_join(df[,c("year","week","t")],shifts,by="year",
+                         relationship="many-to-many") %>%
     #introduce d and set floor and ceiling when adding lag goes out of bounds
     mutate(t_shifted = case_when(d>0 ~ pmin(t + d,max(df$t)),
                                  d<0 ~ pmax(t + d,1),
@@ -130,7 +137,8 @@ cor_season <- function(par,df,taxa,shifts){
 cor_year <- function(par,df,taxa,shifts){
   shifts[["d"]] = round(par,digits=0)
   df$t = index(df)
-  df_shifts <- left_join(df[,c("year","week","t")],shifts,by="year") %>%
+  df_shifts <- left_join(df[,c("year","week","t")],shifts,by="year",
+                         relationship="many-to-many") %>%
     #introduce d and set floor and ceiling when adding lag goes out of bounds
     mutate(t_shifted = case_when(d>0 ~ pmin(t + d,max(df$t)),
                                  d<0 ~ pmax(t + d,1),
@@ -151,18 +159,14 @@ cor_year <- function(par,df,taxa,shifts){
 shifts_season <- expand.grid(seasons,years)
 colnames(shifts_season) <- c("season","year")
 shifts_season <- shifts_season %>% mutate(d=0,syear=paste0(year,"-",season))
-shifts_season
 
 #create grid of years to align dataframe and means
 shifts_year <- data.frame(year=years,d=0)
-shifts_year
 
-#set lower and upper lim for the shift value
-lower_lim=-4
-upper_lim=4
-maxit = 1
+
 
 plankton_list_i = protist_tricho_labelC
+print(paste("taxa:",plankton_list_i[jj]))
 #find optimal set of shifts per season of year that minimize RSS for an individual taxon
 RSS_optim_season <- psoptim(par=shifts_season$d,fn=RSS_season,df=df_carbonC_wyear_mean,
                             taxa=plankton_list_i[jj],
@@ -183,5 +187,6 @@ cor_season <- cor_season(par=RSS_optim_season$par,df=df_carbonC_wyear_mean,taxa=
 #find correlation between each year and the mean annual cycle
 cor_year <- cor_year(par=RSS_optim_season$par,df=df_carbonC_wyear_mean,taxa=plankton_list_i[jj],shifts=shifts_season)
 
-save(RSS_optim_season,RSS_optim_year,cor_season,cor_year,
+taxa = plankton_list_i[jj]
+save(RSS_optim_season,RSS_optim_year,cor_season,cor_year,taxa,
      file=paste0(basepath,"/results/rss_cor_",plankton_list_i[jj],"_",as.character(jj),".RData"))
