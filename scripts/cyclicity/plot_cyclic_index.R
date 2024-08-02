@@ -72,8 +72,10 @@ bar_c_index_include <- c_index %>% filter(taxa %in% label_include)%>%
     panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
                                     colour = "white")
   )
+
+c_index<- left_join(c_index,mb,by="taxa")
 bar_c_index_include_maybe <- c_index %>% filter(taxa %in% c(label_maybe_include))%>%
-  ggplot() + geom_bar(aes(x=reorder(taxa,+max_xcorr),
+  ggplot() + geom_bar(aes(x=reorder(taxa,+mean_conc),
                           y=max_xcorr,
                           fill=func_group),
                       stat="identity")+
@@ -101,13 +103,13 @@ ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_med
 
 bar_c_index_include_maybe
 
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_maybe_lag_adjusted_error_bar_",Sys.Date(),".png"),
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_maybe_lag_adjusted_error_bar_SORTED_BIOMASS",Sys.Date(),".png"),
        width=1500,height=3000,units="px",dpi=200)
 
 
 
 bar_c_index_include_maybe_horizontal <- c_index %>% filter(taxa %in% c(label_maybe_include))%>%
-  ggplot() + geom_bar(aes(x=reorder(taxa,+max_xcorr),
+  ggplot() + geom_bar(aes(x=reorder(taxa,+mean_conc),
                           y=max_xcorr,
                           fill=func_group),
                       stat="identity")+
@@ -127,7 +129,7 @@ bar_c_index_include_maybe_horizontal <- c_index %>% filter(taxa %in% c(label_may
                                     colour = "white"))
   
 bar_c_index_include_maybe_horizontal <- c_index %>% filter(taxa %in% c(label_maybe_include))%>%
-  ggplot() + geom_bar(aes(x=reorder(taxa,-max_xcorr),
+  ggplot() + geom_bar(aes(x=reorder(taxa,-mean_conc),
                           y=max_xcorr,
                           fill=func_group),
                       stat="identity")+
@@ -152,7 +154,7 @@ bar_c_index_include_maybe_horizontal <- c_index %>% filter(taxa %in% c(label_may
 bar_c_index_include_maybe_horizontal
 
 
-ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_maybe_lag_adjusted_error_bar_horiztonal_",Sys.Date(),".png"),
+ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_maybe_lag_adjusted_error_bar_horiztonal_SORTED_",Sys.Date(),".png"),
        width=4300,height=2000,units="px",dpi=300)
 
 

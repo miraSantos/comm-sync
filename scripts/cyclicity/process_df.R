@@ -132,3 +132,54 @@ df_carbonC_filled <- df_carbonC %>%
 
 save(df_carbonC_filled,file=paste0(basepath,"data/r_objects/filled/",Sys.Date(),"_df_carbonC_filled_merged.RData"))
 
+#CREATING VERSIONS WITH SEASONAL AND WEEKLY SERIES
+
+#add date time objects
+#map months to seasons
+metseasons <- c(
+  "01" = "DJF", "02" = "DJF",
+  "03" = "MAM", "04" = "MAM", "05" = "MAM",
+  "06" = "JJA", "07" = "JJA", "08" = "JJA",
+  "09" = "SON", "10" = "SON", "11" = "SON",
+  "12" = "DJF")
+
+#add seasons and weeks etc to time series
+seasons = metseasons[format(df_carbonC$date, "%m")]
+df_carbonC <- df_carbonC %>% mutate(doy_numeric = yday(date),
+                                    week = week(date),year=year(date),
+                                    wyear=paste0(year,"-",week),
+                                    season=seasons,
+                                    syear=paste0(year,"-",season)) 
+
+
+#create version of data at weekly time scale
+df_carbonC_wyear_mean <-df_carbonC %>% group_by(wyear) %>%
+  mutate_at(protist_tricho_labelC,mean,na.rm=T) %>%
+  distinct(wyear, .keep_all=TRUE) %>%
+  ungroup()
+
+#fill gaps in time series
+df_carbonC_filled <- df_carbonC_wyear_mean %>% 
+  group_by(date) %>%
+  summarize(across(all_of(protist_tricho_labelC),mean)) %>%
+  #set to daily frequency
+  complete(date = seq.Date(min(df_carbonC$date),max(df_carbonC$date), by="week")) %>%
+  #fill out doy_numeric
+  mutate(week = week(date)) %>%
+  group_by(week)%>%
+  #replace nans for living things with yearly mean
+  mutate(across(protist_tricho_labelC,~replace_na(.,mean(.,na.rm=T)))) %>%
+  select(all_of(c(protist_tricho_labelC,"date","week"))) %>% ungroup()
+
+
+#add seasons and weeks etc to time series
+seasons = metseasons[format(df_carbonC_filled$date, "%m")]
+df_carbonC_filled <- df_carbonC_filled %>% mutate(doy_numeric = yday(date),
+                                                  week = week(date),year=year(date),
+                                                  wyear=paste0(year,"-",week),
+                                                  season=seasons,
+                                                  syear=paste0(year,"-",season)) 
+
+head(df_carbonC_filled)
+save(df_carbonC_filled,file=paste0(basepath,"data/r_objects/filled/",Sys.Date(),"_df_carbonC_filled_wyear_mean.RData"))
+
