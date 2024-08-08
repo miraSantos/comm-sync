@@ -35,32 +35,6 @@ RSS <- function(par,df,taxa,shifts,unit_j,fix_t=F){
   return(shifted_RSS)
 }
 
-shifts_season
-RSS_temp <- function(par,df,taxa,shifts,unit_j,fix_t=F){
-  #set shifts
-  shifts$lag = par
-
-  #create indexing column
-  df$t = index(df)
-  shifts_wide = shifts %>% pivot_wider(names_from=lag_type,values_from=lag)
-  #join seasonal shifts to dataframe indices
-  df_shifts <- left_join(df[,c(unit_j,"week","t")],shifts_wide,by=unit_j) %>%
-    #compute new shifts
-    mutate(t_shifted = case_when(time_lag>0 ~ pmin(t + time_lag,max(df$t)),
-                                 time_lag<0 ~ pmax(t + time_lag,1),
-                                 time_lag==0 ~ t))
-  #apply shifts to dataframe
-  var_shifted = df[df_shifts$t_shifted,taxa]-df_shifts$amp_lag 
-  #compute new mean annual cycle
-  sub_lag <- function(x){return(x-df_shifts$amp_lag)}
-  mean_adjusted = df[df_shifts$t_shifted,] %>% mutate_at(taxa,sub_lag) %>%
-    group_by(week) %>% summarise_at(taxa,mean,na.rm=T)
-  #create dataframe to compare mean annual cycle
-  df_mean_a <- left_join(df_shifts,mean_adjusted,by="week")
-  #compute residual sum of squares
-  shifted_RSS = sum((var_shifted-(df_mean_a[taxa]))^2,na.rm=T)
-  return(shifted_RSS)
-}
 
 cor_ts <- function(par,df,taxa,shifts,unit_j){
   shifts$lag[1:length(shifts$year)/2] = round(par[1:length(shifts$year)/2])

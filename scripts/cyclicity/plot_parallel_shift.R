@@ -1,6 +1,5 @@
 basepath="/home/mira/MIT-WHOI/github_repos/comm-sync/"
 
-files = list.files(paste0(basepath,"results_slurm/"),full.names=T)
 list.of.packages <- c("RColorBrewer", "lubridate",
                       "ggplot2","tibbletime","dplyr","tidyr","zoo","stringr",
                       "ggsignif","plotly","dtw","scales","patchwork","pso",
@@ -16,6 +15,13 @@ source("/home/mira/MIT-WHOI/github_repos/comm-sync/scripts/cyclicity/shift_funct
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbon_labels.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
+load(paste0(basepath,"data/r_objects/filled/2024-07-26_df_carbonC_filled_wyear_mean.RData"))
+files = list.files(paste0(basepath,"results_slurm/"),full.names=T)
+load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-27.RData"))
+
+head(c_index)
+
+tol_c_index = c_index$taxa[which(c_index$metric_c_mean > 0.5)]
 #add date time objects
 #map months to seasons
 metseasons <- c(
@@ -64,6 +70,13 @@ shifts_season <- data.frame(season = rep(sgrid$Var1,2),year=rep(sgrid$Var2,2),
   mutate(syear=paste0(year,"-",season))
 shifts_season
 
+
+
+#look into files
+head(files)
+
+
+#Create dataset to load all lags from output of slurm
 super_shift =  data.frame(year=numeric(),lag=numeric(),syear=numeric(),taxa=character(),season=character())
 for(file_i in 1:length(files)){
 load(files[file_i])
@@ -84,12 +97,20 @@ super_shift <- rbind(super_shift,shifts_season)
 }
 
 str(super_shift)
+
+which()
+
+#set order of season
 super_shift <- super_shift %>% mutate(season = factor(season,
-                                                      levels=c("SON","JJA","MAM","DJF"))) 
+                                                      levels=c("DJF","MAM","JJA","SON"))) 
+
+super_shift <- super_shift %>% mutate(lag = case_when(year==2019~NA,((year==2018)&(season=="SON"))~NA,
+                                                      (!syear %in% syear_tol) ~ NA,.default=lag))
+
 
 super_shift %>% filter(season =="DJF",
                        lag_type=="time_lag",
-                       taxa %in% label_maybe_include) %>%
+                       taxa %in% tol_c_index) %>%
   ggplot() + geom_tile(aes(x=year,y=reorder(taxa,-cor),fill=lag))+
   scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
   labs(x="Year",y="Season",fill="Lag (Weeks)") + ggtitle("Season: DJF")+
@@ -97,7 +118,7 @@ super_shift %>% filter(season =="DJF",
 
 super_shift %>% filter(season =="SON",
                        lag_type=="time_lag",
-                       taxa %in% label_maybe_include) %>%
+                       taxa %in% tol_c_index) %>%
   ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
   scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
   labs(x="Year",y="Season",fill="Lag (Weeks)") + ggtitle("Season: SON")+
@@ -105,22 +126,50 @@ super_shift %>% filter(season =="SON",
 
 super_shift %>% filter(season =="MAM",
                        lag_type=="time_lag",
-                       taxa %in% label_maybe_include) %>%
+                       taxa %in% tol_c_index) %>%
   ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
   scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
   labs(x="Year",y="Season",fill="Lag (Weeks)")+ ggtitle("Season: MAM")+
   scale_x_continuous(breaks=seq(2006,2023,2))
 
+super_shift %>% filter(lag_type=="time_lag",
+                       (taxa %in% tol_c_index)) %>% ggplot() +
+  facet_grid(cols=vars(season))+
+  geom_histogram(aes(x=lag))
+
 super_shift %>% filter(season =="JJA",
                        lag_type=="time_lag",
-                       taxa %in% label_maybe_include) %>% 
+                       taxa %in% tol_c_index,) %>% 
   ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
   scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
   labs(x="Year",y="Season",fill="Lag (Weeks)")+ ggtitle("Season: JJA")+
   scale_x_continuous(breaks=seq(2006,2023,2))
 
+super_shift %>% filter(season =="JJA",
+                       lag_type=="time_lag",
+                       taxa %in% label_maybe_include) %>% group_by(taxa) %>% 
+  summarise(avg_mag_lag = mean(abs(lag)))
 
-ggsave(filename = paste0(basepath,"/figures/seasonal_shifts/season_shift_",,"_",Sys.Date(),".png"),
+counts_syear = df_carbonC_wyear_mean %>% group_by(syear) %>% summarise(count=n())
+syear_tol = counts_syear$syear[which(counts_syear$count>9)]
+
+super_shift %>% filter(lag_type=="time_lag",
+                       (taxa %in% tol_c_index))%>% group_by(season) %>% 
+  summarise(avg_mag_lag = mean(abs(lag),na.rm=T))
+
+super_shift %>% filter(lag_type=="time_lag",
+                       (taxa %in% tol_c_index))%>% group_by(season) %>% 
+  summarise(avg_mag_lag = mean(lag,na.rm=T))
+
+super_shift %>% filter(lag_type=="time_lag",
+                       (taxa %in% tol_c_index) & (taxa %in% diatom_labelC))%>% group_by(season) %>% 
+  summarise(avg_mag_lag = mean(lag,na.rm=T))
+
+super_shift %>% filter(lag_type=="time_lag",
+                       (taxa %in% label_maybe_include) & (taxa %in% dino_label))%>% group_by(season) %>% 
+  summarise(avg_mag_lag = mean(abs(lag),na.rm=T))
+  
+ggsave(filename = paste0(basepath,"/figures/seasonal_shifts/season_shift_","_",Sys.Date(),".png"),
        width = 2400,height= 1200,units="px",dpi=300)
 
 for(kk in 1:length(protist_tricho_labelC)){
@@ -134,6 +183,10 @@ for(kk in 1:length(protist_tricho_labelC)){
 
 ggsave(filename = paste0(basepath,"/figures/seasonal_shifts/season_shift_",protist_tricho_labelC[kk],"_",Sys.Date(),".png"),
        width = 2400,height= 1200,units="px",dpi=300)
+super_shift %>% filter(lag_type == "time_lag") %>% group_by(season) %>% mutate(sd(lag,na.rm=T))
+
+super_shift %>% filter(lag_type == "time_lag") %>% group_by(taxa) %>% ggplot() + 
+  geom_point(aes(x=taxa,y=sd(lag,na.rm=T)))
 
 super_shift %>% filter(taxa==protist_tricho_labelC[kk],lag_type=="time_lag") %>% 
   ggplot() + geom_tile(aes(x=year,y=season,fill=cor))+
@@ -147,7 +200,12 @@ ggsave(filename = paste0(basepath,"/figures/seasonal_correlations/season_shift_"
 }
 
 
-shifts_season %>% filter(season=="SON")
+super_shift %>% filter(season=="SON",lag_type=="time_lag",
+                       (taxa %in% diatom_labelC) & (taxa %in% label_maybe_include)) %>% 
+  group_by(taxa) %>%
+  summarise(avg_mag_lag = mean(abs(lag),na.rm = T)) %>% arrange(desc(avg_mag_lag))
+
+
 shifts_season <- shifts_season %>% mutate(season = factor(season,
                                          levels=c("SON","JJA","MAM","DJF")),
                                          lag = RSS_optim_season_temp$par,
@@ -160,6 +218,8 @@ shifts_season %>% filter(lag_type == "time_lag")%>% ggplot() +
   scale_x_continuous(breaks=seq(2006,2023,2))
 
 
+
+
 ggsave(filename = paste0(basepath,"/figures/seasonal_shifts/season_shift_tempeature_",Sys.Date(),".png"),
        width = 2400,height= 1200,units="px",dpi=300)
 
@@ -168,3 +228,118 @@ means_biomass <- colMeans(df_carbonC_wyear_mean[protist_tricho_labelC],na.rm=T)
 
 mb <- stack(means_biomass)
 colnames(mb) <- c("mean_conc","taxa")
+
+
+
+group = diatom_labelC
+super_shift %>% filter(season =="DJF",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>%
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,-cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)") + ggtitle("Season: DJF")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+super_shift %>% filter(season =="SON",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>%
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)") + ggtitle("Season: SON")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+super_shift %>% filter(season =="MAM",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>%
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)")+ ggtitle("Season: MAM")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+super_shift %>% filter(season =="JJA",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>% 
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)")+ ggtitle("Season: JJA")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+
+group = dino_label
+super_shift %>% filter(season =="DJF",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>%
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,-cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)") + ggtitle("Season: DJF")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+super_shift %>% filter(season =="SON",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>%
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)") + ggtitle("Season: SON")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+super_shift %>% filter(season =="MAM",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>%
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)")+ ggtitle("Season: MAM")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+super_shift %>% filter(season =="JJA",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>% 
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)")+ ggtitle("Season: JJA")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+group = ciliate_label
+super_shift %>% filter(season =="DJF",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>%
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,-cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)") + ggtitle("Season: DJF")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+super_shift %>% filter(season =="SON",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>%
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)") + ggtitle("Season: SON")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+super_shift %>% filter(season =="MAM",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>%
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)")+ ggtitle("Season: MAM")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+super_shift %>% filter(season =="JJA",
+                       lag_type=="time_lag",
+                       taxa %in% group) %>% 
+  ggplot() + geom_tile(aes(x=year,y=reorder(taxa,+mean_cor),fill=lag))+
+  scale_fill_gradient2(midpoint = 0, mid="#eee8d5", high="#5EC625", low="#A73ABD") +
+  labs(x="Year",y="Season",fill="Lag (Weeks)")+ ggtitle("Season: JJA")+
+  scale_x_continuous(breaks=seq(2006,2023,2))
+
+
+
+super_shift %>% filter(lag_type=="time_lag",
+                       taxa %in% diatom_labelC) %>% ggplot() +
+  facet_grid(cols=vars(season))+
+  geom_histogram(aes(x=lag))
+
+super_shift %>% filter(lag_type=="time_lag",
+                       taxa %in% dino_label) %>% ggplot() +
+  facet_grid(cols=vars(season))+
+  geom_histogram(aes(x=lag)) +ylim(0,90)
+

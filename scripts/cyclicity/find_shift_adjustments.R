@@ -44,10 +44,12 @@ df_carbonC <- df_carbonC %>% mutate(doy_numeric = yday(date),
                                     season=seasons,
                                     syear=paste0(year,"-",season)) 
 
+log_zero <- function(x){log10(x+0.5*min(x))}
 
 #create version of data at weekly time scale
 df_carbonC_wyear_mean <-df_carbonC %>% group_by(wyear) %>%
   mutate_at(protist_tricho_labelC,mean,na.rm=T) %>%
+  mutate_at(protist_tricho_labelC,log_zero) %>%
   distinct(wyear, .keep_all=TRUE) %>%
   ungroup()
 

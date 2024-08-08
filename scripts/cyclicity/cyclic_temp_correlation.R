@@ -16,6 +16,7 @@ load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 load(paste0(basepath,"/data/r_objects/c_index_df_cor_2024_May_13.RData"))
 load(paste0(basepath,"/data/r_objects/df_env_2024-05-28.RData"))
 
+
 df_env_merge <-merge(df_carbonC,df_env[,c("Beam_temperature_corrected","date")], by="date")
 df_env_merge$year <- year(df_env_merge$date)
 df_env_merge$month <- month(df_env_merge$date)

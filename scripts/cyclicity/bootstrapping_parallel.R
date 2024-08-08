@@ -22,6 +22,8 @@ lower_lim=-4
 upper_lim=4
 maxit = 3000
 plankton_list_i = protist_tricho_labelC
+files = list.files(paste0(basepath,"results/"),full.names=T)
+load(files[jj])
 
 #add date time objects
 #map months to seasons
@@ -36,7 +38,7 @@ metseasons <- c(
 log_zero <- function(x){log10(x+0.1)}
 seasons = metseasons[format(df_carbonC_filled$date, "%m")]
 df_carbonC_filled_log <- df_carbonC_filled %>%
-                                  mutate_at(protist_tricho_labelC,log_zero)
+  mutate_at(protist_tricho_labelC,log_zero)
 
 
 #set range of years to explore
@@ -60,65 +62,6 @@ shifts_year <- data.frame(year=rep(years,2),lag=0,
                           lag_type=c(rep("time_lag",length(years)),
                                      rep("amp_lag",length(years))))
 shifts_year
-
-#find optimal set of shifts per season of year that minimize RSS for an individual taxon
-RSS_optim_season_null <- psoptim(par=shifts_season$lag,
-                            fn=RSS,df=df_carbonC_filled_log,
-                            taxa=plankton_list_i[jj],
-                            shifts=shifts_season,
-                            unit_j = "syear",
-                            fix_t=T,
-                            lower=rep(lower_lim,length(years)),
-                            upper=rep(upper_lim,length(years)),
-                            control=list(maxit=maxit))
-
-RSS_optim_season <- psoptim(par=shifts_season$lag,
-                            fn=RSS,df=df_carbonC_filled_log,
-                            taxa=plankton_list_i[jj],
-                            shifts=shifts_season,
-                            unit_j = "syear",
-                            fix_t=F,
-                            lower=rep(lower_lim,length(years)),
-                            upper=rep(upper_lim,length(years)),
-                            control=list(maxit=maxit))
-
-#find optimal set of shifts per year that minimize RSS for an individual taxon
-#under null model 
-RSS_optim_year_null <- psoptim(par=shifts_year$lag,
-                          fn=RSS,df=df_carbonC_filled_log,
-                          taxa=plankton_list_i[jj],
-                          shifts=shifts_year,
-                          unit_j = "year",
-                          fix_t=T,
-                          lower=rep(lower_lim,length(years)),
-                          upper=rep(upper_lim,length(years)),
-                          control=list(maxit=maxit))
-
-#find optimal set of shifts per year that minimize RSS for an individual taxon
-RSS_optim_year <- psoptim(par=shifts_year$lag,
-                          fn=RSS,df=df_carbonC_filled_log,
-                          taxa=plankton_list_i[jj],
-                          shifts=shifts_year,
-                          unit_j = "year",
-                          fix_t=F,
-                          lower=rep(lower_lim,length(years)),
-                          upper=rep(upper_lim,length(years)),
-                          control=list(maxit=maxit))
-
-#find correlation between each season of year and the mean seasonal cycle
-cor_season <- cor_ts(par=RSS_optim_season$par,df=df_carbonC_filled_log,
-                     taxa=plankton_list_i[jj],shifts=shifts_season,
-                     unit_j="syear")
-
-#find correlation between each year and the mean annual cycle
-cor_year <- cor_ts(par=RSS_optim_season$par,df=df_carbonC_filled_log,
-                   taxa=plankton_list_i[jj],shifts=shifts_season,
-                   unit_j="year")
-
-#save season, year, and correlation files
-save(RSS_optim_season_null,RSS_optim_season,RSS_optim_year_null,RSS_optim_year,cor_season,cor_year,
-     file=paste0(basepath,"/results/rss_cor_",
-                 plankton_list_i[jj],"_",as.character(jj),".RData"))
 
 #################################################################################
 #bootstrapping residuals
@@ -282,5 +225,5 @@ shift.boot.year <- tsboot(tseries = shift.res.year,
 str(shift.boot.year)
 
 save(shift.boot.year,shift.boot.season,
-    file=paste0(basepath,"results/statistic_",
-            plankton_list_i[jj],"_",as.character(jj),".RData"))
+     file=paste0(basepath,"results/statistic_",
+                 plankton_list_i[jj],"_",as.character(jj),".RData"))

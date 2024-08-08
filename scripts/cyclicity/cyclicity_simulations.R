@@ -313,6 +313,8 @@ shift.boot <- tsboot(shift.res,
 ###proportion of values of the statistic that exceed the original
 num.greater= length(which(shift.boot$t > orig.ts.stat))
 
+#standard error of pvalue square root of pval * 1-pval divivded by number of boot strap samples 
+
 ###p-val is fraction of bootstrapped numbers that exceed the original
 p.val = num.greater/length(shift.boot$t)
 hist(shift.boot$t)
