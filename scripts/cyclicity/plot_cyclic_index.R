@@ -66,7 +66,7 @@ bar_c_index_include <- c_index %>% filter(taxa %in% label_include)%>%
   # theme(axis.text.y = element_text(colour = color_code))+
   theme(
     panel.background = element_rect(fill = "white", colour = "black",
-                                    size = 0.75, linetype = "solid"),
+                                    linewidth = 0.75, linetype = "solid"),
     panel.grid.major  = element_line(size = 0.25, linetype = 'solid',
                                      colour = "gray"), 
     panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
@@ -102,6 +102,12 @@ ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_med
        width=1500,height=2000,units="px",dpi=200)
 
 bar_c_index_include_maybe
+
+
+
+
+
+
 
 ggsave(filename=paste0(basepath,"/figures/cyclic_index/cyclic_index_quadroot_median_include_maybe_lag_adjusted_error_bar_SORTED_BIOMASS",Sys.Date(),".png"),
        width=1500,height=3000,units="px",dpi=200)

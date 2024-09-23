@@ -17,6 +17,7 @@ index_include = which(opt_thresh$Updated.Status =="include")
 label_maybe_include <-opt_thresh$Class[index_maybe_include]
 label_include <-opt_thresh$Class[index_include]
 
+
 save(opt_thresh,label_maybe_include,label_include,
      file=paste0(basepath,"data/r_objects/df_stat_opt_thresh",Sys.Date(),".RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
@@ -32,7 +33,7 @@ dino_label <- read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_dino_label.csv
 ciliate_label <- read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_ciliate_label.csv"),header=F)$V1
 metadata <- read.csv(paste0(data_path,"carbon_conc_MVCO_2023_11_metadata.csv"),header=T)
 
-
+#fix date time variable
 df_carbon$date <- as.Date(metadata$datetime,format="%d-%b-%Y %H:%M:%S")
 head(df_carbon)
 
@@ -40,6 +41,23 @@ syn_url <- "/home/mira/MIT-WHOI/data/2023/MVCO_syn_euk_conc_2023_Mar.csv"
 df_syn_euk <- read.csv(syn_url)
 df_syn_euk$date <- as.Date(df_syn_euk$Time_UTC,format = "%d-%b-%Y %H:%M:%S")
 head(df_syn_euk)
+
+func_groups <- c("protist_tricho","metazoan","Diatom_noDetritus","Dinoflagellate",
+                 "Ciliate","Other_phyto","NanoFlagCocco","NanoFlagCocco_gt5","miscProtist_gt5") 
+
+
+df_group <- read.csv(paste0(basepath,"/data/raw_mvco_ifcb/CSVs/MVCO/groupC_opt.csv"))
+meta_data_group <-read.csv(paste0(basepath,"/data/raw_mvco_ifcb/CSVs/MVCO/groupC_opt_meta_data.csv"))
+head(df_group)
+head(meta_data_group)
+length(df_group$pid)
+df_group_daily <- df_group %>% 
+  mutate(date = as.Date(meta_data_group$sample_time,
+                        format="%Y-%m-%d %H:%M:%S+00:00")) %>% 
+  group_by(date) %>% 
+  summarise_at(func_groups,mean,na.rm=T) %>%
+  drop_na()
+
 
 #computing daily mean
 df_syn_euk_daily <- df_syn_euk %>% group_by(date) %>% 
@@ -68,7 +86,8 @@ list_remove <- c("Guinardia_delicatula","Guinardia_delicatula_TAG_internal_paras
 list_add <- c("Guinardia_delicatula_merged","Cylindrotheca_merged",
               "Chaetoceros_merged", "Chrysochromulina_merged", "coccolithophorid_merged",
               "Pseudo_nitzschia_merged","Thalassionema_merged","Dinophyceae_merged",
-              "Tintinnina_merged","Strombidium_merged","Dinophysis_merged","Synechococcus","Pico_eukaryotes")
+              "Tintinnina_merged","Strombidium_merged","Dinophysis_merged","Synechococcus","Pico_eukaryotes",
+              func_groups)
 lookup <- c("pennate_Pseudo_nitzschia"="pennate_Pseudo.nitzschia", "Pseudo_nitzschia"="Pseudo.nitzschia")
 df_carbonC <- df_carbon %>% 
   rename(all_of(lookup)) %>%
@@ -88,10 +107,10 @@ df_carbonC <- df_carbon %>%
            Strombidium_inclinatum+Strombidium_morphotype1 + Strombidium_morphotype2 +
           Strombidium_tintinnodes+Strombidium_wulffi) %>%
           select(-any_of(list_remove)) %>%
-          full_join(df_syn_euk_daily,by="date")
+          full_join(df_syn_euk_daily,by="date") %>%
+          full_join(df_group_daily,by="date")
 
 df_carbonC$doy_numeric <- yday(df_carbonC$date)
-
 names(df_carbonC)
 
 #add and remove
@@ -149,7 +168,7 @@ df_carbonC <- df_carbonC %>% mutate(doy_numeric = yday(date),
                                     week = week(date),year=year(date),
                                     wyear=paste0(year,"-",week),
                                     season=seasons,
-                                    syear=paste0(year,"-",season)) 
+                                    syear=paste0(year,"-",season))
 
 
 #create version of data at weekly time scale
@@ -158,8 +177,12 @@ df_carbonC_wyear_mean <-df_carbonC %>% group_by(wyear) %>%
   distinct(wyear, .keep_all=TRUE) %>%
   ungroup()
 
+write.csv(df_carbonC_wyear_mean,file = paste0(basepath,"/data/df_carbonC_weekly",Sys.Date(),".csv"))
+write.csv(df_carbonC_wyear_mean,file = paste0("/home/mira/MIT-WHOI/github_repos/sound_plankton/data/df_carbonC_weekly",Sys.Date(),".csv"))
+write.csv(protist_tricho_labelC, file = paste0("/home/mira/MIT-WHOI/github_repos/sound_plankton/data/protist_tricho_labelC",Sys.Date(),".csv"))
+
 #fill gaps in time series
-df_carbonC_filled <- df_carbonC_wyear_mean %>% 
+df_carbonC_filled_wyear_mean <- df_carbonC_wyear_mean %>% 
   group_by(date) %>%
   summarize(across(all_of(protist_tricho_labelC),mean)) %>%
   #set to daily frequency
@@ -174,12 +197,14 @@ df_carbonC_filled <- df_carbonC_wyear_mean %>%
 
 #add seasons and weeks etc to time series
 seasons = metseasons[format(df_carbonC_filled$date, "%m")]
-df_carbonC_filled <- df_carbonC_filled %>% mutate(doy_numeric = yday(date),
+df_carbonC_filled_wyear_mean <- df_carbonC_filled_wyear_mean %>% mutate(doy_numeric = yday(date),
                                                   week = week(date),year=year(date),
                                                   wyear=paste0(year,"-",week),
                                                   season=seasons,
                                                   syear=paste0(year,"-",season)) 
 
-head(df_carbonC_filled)
-save(df_carbonC_filled,file=paste0(basepath,"data/r_objects/filled/",Sys.Date(),"_df_carbonC_filled_wyear_mean.RData"))
+head(df_carbonC_filled_wyear_mean)
+write.csv(df_carbonC_filled_wyear_mean,
+          file = paste0("/home/mira/MIT-WHOI/github_repos/sound_plankton/data//df_carbonC_weekly_FILLED",Sys.Date(),".csv"))
+save(df_carbonC_filled_wyear_mean,file=paste0(basepath,"data/r_objects/filled/",Sys.Date(),"_df_carbonC_filled_wyear_mean.RData"))
 

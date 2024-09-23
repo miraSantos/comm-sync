@@ -10,8 +10,8 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
 
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-08-23_df_carbon_labels.RData"))
+load(paste0(basepath,"data/r_objects/filled/2024-08-23_df_carbonC_filled_wyear_mean.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 source(paste0(basepath,"/scripts/cyclicity/shift_functions.R"))
 

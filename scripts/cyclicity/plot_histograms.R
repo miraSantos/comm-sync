@@ -164,3 +164,7 @@ c_index  %>% filter(taxa %in% label_maybe_include,func_group=="Misc. Nanoplankto
 #LAG
 names(df_cor)
 head(df_cor)
+
+
+ggplot(data=df_carbonC_wyear_mean) + 
+  geom_point(aes(y=Synechococcus,x=Beam_temperature_corrected,color=as.factor(year)))

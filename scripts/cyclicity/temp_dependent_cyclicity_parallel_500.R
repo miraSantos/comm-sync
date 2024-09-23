@@ -9,28 +9,31 @@ if(length(new.packages)) install.packages(new.packages,repos='http://cran.us.r-p
 lapply(list.of.packages, require, character.only = TRUE)
 
 load(paste0(basepath,"data/r_objects/2024-06-13_df_carbon_labels.RData"))
-load(paste0(basepath,"data/2024-07-26_df_carbonC_filled_wyear_mean.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/filled/2024-07-26_df_carbonC_filled_wyear_mean.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 source(paste0(basepath,"/scripts/shift_functions.R"))
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
 
 args = commandArgs(trailingOnly=TRUE)
 jj = as.numeric(args[1])
 print(paste("index",jj))
+print(protist_tricho_labelC[jj])
 
-
+#set lower and upper lim for the shift value
+lower_lim=-4
+upper_lim=4
+maxit = 100
 plankton_list_i = protist_tricho_labelC
-taxa = protist_tricho_labelC[jj]
-files = list.files(paste0(basepath,"results/temp_shift/"),full.names=T)
-load(files[jj])
+num_replicates = 100
+max_iter = 100 #bootstrap
 
+print(paste("maxit =",maxit))
 print(paste("taxa",protist_tricho_labelC[jj]))
 
 df_env <- read.csv(paste0(basepath,"/data/mvco/mvco_daily_2023.csv"))
 df_env$date <- as.Date(df_env$days,format ="%d-%b-%Y")
 df_env$year <- year(df_env$date)
 df_env$week <- week(df_env$date)
-
 #add date time objects
 #map months to seasons
 metseasons <- c(
@@ -40,6 +43,8 @@ metseasons <- c(
   "09" = "SON", "10" = "SON", "11" = "SON",
   "12" = "DJF")
 
+#add seasons and weeks etc to time series
+#load temperature
 seasons = metseasons[format(df_carbonC$date, "%m")]
 
 df_carbonC <- df_carbonC %>% mutate(doy_numeric = yday(date),
@@ -59,36 +64,37 @@ df_carbonC_wyear_mean <-df_merged %>% group_by(wyear) %>%  filter(year>2005) %>%
   distinct(wyear, .keep_all=TRUE) %>%
   ungroup()
 
-#set range of years to explore
-years = seq(2006,max(df_carbonC_filled_log$year),1)
-
+#expand grid of season per year
 #create dataframe with years and seasons
 seasons <- c("DJF","MAM","JJA","SON")
 years <- seq(2006,max(df_carbonC_wyear_mean$year)-1,1)
 sgrid <-expand.grid(seasons,years)
 shifts_season <- data.frame(season = sgrid$Var1,year=sgrid$Var2)%>%
   mutate(syear=paste0(year,"-",season))
-shifts_season
+
+#create grid of years to align dataframe and means
+shifts_year <- data.frame(year=rep(years,2))
+print("shifts_year")
+shifts_year
 
 df_season_temp <- df_merged %>% group_by(syear) %>%
   reframe(mean_temp = mean(Beam_temperature_corrected,na.rm=T),date=first(date))
 
 shift_0 = rep(0,2+length(shifts_season$year))
-#################################################################################
-#bootstrapping residuals
-#################################################################################
+RSS.temp(par=shift_0,df=df_carbonC_wyear_mean,
+         taxa="Beam_temperature_corrected",shifts=shifts_season,unit_j="syear")
 
-#retrieve optimal parameters from unconstrained model
-time_lag_i = 2
-taxa = protist_tricho_labelC[jj]
+#find optimal set of shifts per season of year that minimize RSS for an individual taxon
 
+RSS_optim_season <- psoptim(par=shift_0,
+                            fn=RSS.temp,df=df_carbonC_wyear_mean,
+                            shifts=shifts_season,
+                            unit_j = "syear",
+                            taxa=plankton_list_i[jj],
+                            lower=rep(lower_lim,length(years)),
+                            upper=rep(upper_lim,length(years)),
+                            control=list(maxit=maxit))
 
-lower_lim = -4
-upper_lim = 4
-#number of replicates
-
-
-#time series
 
 df_mean_season <- gen_seasonal_mean(par=RSS_optim_season$par,
                                     df=df_carbonC_wyear_mean,taxa=plankton_list_i[jj],
@@ -115,16 +121,9 @@ shift.sim <- function(res,n.sim, ran.args) {
   return(df.sim$amp_lag + df.sim$seasonal_mean+rg1)
 }
 
-
-###################################
-#bootstrap
-###################################
-
-
 print("bootstrapping residuals")
 
-num_replicates = 100
-max_iter = 1000
+
 print(paste0("num_replicates = ",num_replicates))
 print(paste0("max_iter = ",max_iter))
 
@@ -152,7 +151,7 @@ print("compute original statistic")
 orig.ts.stat = shift.statistic(error=shift.res.season,taxa = plankton_list_i[jj],
                                df.sim=df_mean_season,df.shifts=shifts_season,
                                unit_j="syear",
-                               lower_lim=-4,upper_lim=4,maxit=1000)
+                               lower_lim=-4,upper_lim=4,maxit=maxit)
 
 #p-value
 ###proportion of values of the statistic that exceed the original
@@ -168,12 +167,12 @@ c.interval
 
 print("saving data")
 #save season, year, and correlation files
-save(RSS_optim_season_null,RSS_optim_season,RSS_optim_year_null,RSS_optim_year,cor_season,cor_year,
-     file=paste0(basepath,"/results/rss_cor_",
+save(RSS_optim_season,
+     file=paste0(basepath,"/results/temp_shift_100/rss_cor_",
                  plankton_list_i[jj],"_",as.character(jj),".RData"))
 
-save(shift.boot.year,shift.boot.season,orig.ts.stat,
-     file=paste0(basepath,"results/statistic_",
+save(shift.boot.season,orig.ts.stat,
+     file=paste0(basepath,"results/temp_shift_100/statistic_",
                  plankton_list_i[jj],"_",as.character(jj),".RData"))
 
 print("finished script")

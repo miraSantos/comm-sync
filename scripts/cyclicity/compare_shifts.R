@@ -1,6 +1,6 @@
 basepath="/home/mira/MIT-WHOI/github_repos/comm-sync/"
 
-files = list.files(paste0(basepath,"results_slurm/"),full.names=T)
+files = list.files(paste0(basepath,"/results/results_bootstrap/"),full.names=T)
 list.of.packages <- c("RColorBrewer", "lubridate",
                       "ggplot2","tibbletime","dplyr","tidyr","zoo","stringr",
                       "ggsignif","plotly","dtw","scales","patchwork","pso",
@@ -16,6 +16,7 @@ load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbon_labels.RData"
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 load(paste0(basepath,"data/r_objects/filled/2024-07-26_df_carbonC_filled_wyear_mean.RData"))
 source("/home/mira/MIT-WHOI/github_repos/comm-sync/scripts/cyclicity/shift_functions.R")
+source(paste0(basepath,"/scripts/cyclicity/shift_functions.R"))
 
 #add date time objects
 #map months to seasons

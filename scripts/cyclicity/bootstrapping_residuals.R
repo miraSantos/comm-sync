@@ -10,7 +10,7 @@ source("/home/mira/MIT-WHOI/github_repos/comm-sync/scripts/cyclicity/shift_funct
 load(paste0(basepath,"data/r_objects/filled/2024-07-26_df_carbonC_filled_wyear_mean.RData"))
 load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbon_labels.RData"))
 
-files = list.files(paste0(basepath,"results_slurm/"),full.names=T)
+files = list.files(paste0(basepath,"results/results_bootstrap/"),full.names=T)
 #compute RSS given shifts and relevant units
 metseasons <- c(
   "01" = "DJF", "02" = "DJF",
@@ -25,6 +25,7 @@ seasons = metseasons[format(df_carbonC_filled$date, "%m")]
 df_carbonC_filled_log <- df_carbonC_filled %>%
   mutate_at(protist_tricho_labelC,log_zero)
 
+df_carbonC_filled_log$test <- 
 
 #create dataframe to align shifts with corresponding season and year
 #shifts_season for season level shifts
@@ -45,36 +46,6 @@ shifts_year <- data.frame(year=rep(years,2),lag=0,
                           lag_type=c(rep("time_lag",length(years)),
                                      rep("amp_lag",length(years))))
 
-#function to compute seasonal mean given set of shifts
-gen_seasonal_mean <- function(par,df,taxa,shifts,unit_j,fix_t=F){
-  #set shifts
-  shifts$lag = par
-  time_lag_i = length(shifts$year)/2
-  #round time lags to integers
-  shifts$lag[1:time_lag_i] = round(par[1:time_lag_i])
-  #fix time lags to zero
-  if(fix_t==T){shifts$lag[1:time_lag_i]=0}
-  #create indexing column
-  df$t = index(df)
-  shifts_wide = shifts %>% pivot_wider(names_from=lag_type,values_from=lag)
-  #join seasonal shifts to dataframe indices
-  df_shifts <- left_join(df[,c(unit_j,"week","t",taxa)],
-                         shifts_wide,by=unit_j) %>%
-    #compute new shifts
-    mutate(t_shifted = case_when(time_lag>0 ~ pmin(t + time_lag,max(df$t)),
-                                 time_lag<0 ~ pmax(t + time_lag,1),
-                                 time_lag==0 ~ t)) %>% drop_na()
-  #apply shifts to dataframe
-  var_shifted = df[df_shifts$t_shifted,taxa]-df_shifts$amp_lag 
-  #compute new mean annual cycle
-  sub_lag <- function(x){return(x-df_shifts$amp_lag)}
-  mean_adjusted = df[df_shifts$t_shifted,] %>% mutate_at(taxa,sub_lag) %>%
-    group_by(week) %>% summarise_at(taxa,mean,na.rm=T)
-  colnames(mean_adjusted) <- c("week","seasonal_mean")
-  #create dataframe to compare mean annual cycle
-  df_mean_a <- left_join(df_shifts,mean_adjusted,by="week") %>% drop_na()
-   return(df_mean_a)
-}
 
 #retrieve optimal parameters from unconstrained model
 time_lag_i = length(shifts_season$year)/2

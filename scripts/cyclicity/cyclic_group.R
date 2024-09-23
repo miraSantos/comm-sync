@@ -25,7 +25,6 @@ head(df_group)
 quadroot <- function(x){x^(1/4)}
 
 week_means_quadroot <- df_group %>% 
-  mutate_at(func_groups,quadroot) %>%
   group_by(week) %>%
   summarize_at(func_groups,mean,na.rm=T)
 

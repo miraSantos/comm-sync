@@ -7,14 +7,16 @@ list.of.packages <- c("RColorBrewer", "lubridate",
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 lapply(list.of.packages, require, character.only = TRUE)
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbon_labels.RData"))
-load(paste0(basepath,"data/r_objects/unfilled/2024-06-05_df_carbonC.RData"))
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbon_labels.RData"))
 load(paste0(basepath,"data/r_objects/df_stat_opt_thresh.RData"))
 load(paste0(basepath,"/data/r_objects/c_index_merged_df_cor_2024-06-05.RData"))
+load(paste0(basepath,"data/r_objects/c_index_df_cor_2024-06-27.RData"))
+
+load(paste0(basepath,"data/r_objects/unfilled/2024-06-13_df_carbonC.RData"))
 
 
 df_carbonC$week <- week(df_carbonC$date)
-week_means <- df_carbonC %>% 
+week_means <- df_carbonC%>% 
   group_by(week) %>%
   summarize_at(protist_tricho_labelC,mean,na.rm=T)
 
@@ -22,34 +24,34 @@ week_means <- df_carbonC %>%
 # cyclity - diatoms high
 #############################################
 
-diatoms_list_include_maybe <- c_index %>% filter(species %in% label_maybe_include,max_xcorr>=0.7,func_group=="Diatom") %>% 
-  select(species) %>% unique()
-diatoms_list_include <- c_index %>% filter(species %in% label_include,max_xcorr>=0.7,func_group=="Diatom") %>% 
-  select(species) %>% unique()
+diatoms_list_include_maybe <- c_index %>% filter(taxa %in% label_maybe_include,max_xcorr>=0.6,func_group=="Diatom") %>% 
+  select(taxa) %>% unique()
+diatoms_list_include <- c_index %>% filter(taxa %in% label_include,max_xcorr>=0.7,func_group=="Diatom") %>% 
+  select(taxa) %>% unique()
 
-dino_list_include_maybe <- c_index %>%  filter(species %in% label_maybe_include,max_xcorr>=0.6,func_group=="Dinoflagellate") %>% 
-  select(species) %>% unique()
-dino_list_include <- c_index %>%  filter(species %in% label_include,max_xcorr>=0.5,func_group=="Dinoflagellate") %>% 
-  select(species) %>% unique()
+dino_list_include_maybe <- c_index %>%  filter(taxa %in% label_maybe_include,max_xcorr>=0.6,func_group=="Dinoflagellate") %>% 
+  select(taxa) %>% unique()
+dino_list_include <- c_index %>%  filter(taxa %in% label_include,max_xcorr>=0.5,func_group=="Dinoflagellate") %>% 
+  select(taxa) %>% unique()
 
-high_c_index<- c_index %>%  filter(species %in% label_maybe_include,max_xcorr>=0.7) %>% 
-  select(species) %>% unique()
-
-
-ciliate_list_include_maybe <- c_index %>%  filter(species %in% label_maybe_include,max_xcorr>=0.55,func_group=="Ciliate") %>% 
-  select(species) %>% unique()
+high_c_index<- c_index %>%  filter(taxa %in% label_maybe_include,max_xcorr>=0.7) %>% 
+  select(taxa) %>% unique()
 
 
-mn_list_include_maybe <- c_index %>%  filter(species %in% label_maybe_include,max_xcorr>=0.6,func_group=="Misc. Nanoplankton") %>% 
-  select(species) %>% unique()
+ciliate_list_include_maybe <- c_index %>%  filter(taxa %in% label_maybe_include,max_xcorr>=0.55,func_group=="Ciliate") %>% 
+  select(taxa) %>% unique()
+
+
+mn_list_include_maybe <- c_index %>%  filter(taxa %in% label_maybe_include,max_xcorr>=0.6,func_group=="Misc. Nanoplankton") %>% 
+  select(taxa) %>% unique()
 
 week_means %>% 
-  select(high_c_index$species,"week") %>%
-  gather(key="species",value="conc",-c(week)) %>%
+  select(high_c_index$taxa,"week") %>%
+  gather(key="taxa",value="conc",-c(week)) %>%
   ggplot() + 
-  geom_line(aes(x=week,y=conc,color=species)) +
-  geom_point(aes(x=week,y=conc,color=species)) +
-  labs(color = "Species",shape="Species")+
+  geom_line(aes(x=week,y=conc,color=taxa)) +
+  geom_point(aes(x=week,y=conc,color=taxa)) +
+  labs(color = "taxa",shape="taxa")+
   scale_shape_manual(values=rainbow(14)) +
   xlab("Week")+
   scale_y_log10(label=comma)+
@@ -64,6 +66,10 @@ week_means %>%
                                     colour = "gray")
   )
 
+df_carbonC %>% select(c(diatoms_list_include_maybe$taxa,"week","year")) %>% 
+  group_by(year) %>% mutate(week[which.max()])
+
+
 ggsave(filename=paste0(basepath,"/figures/cyclic_index/high_cyclicity/high_cyclity_weekly_conc_",Sys.Date(),".png"),
        width=1800,height = 800,units = "px",dpi=150)
 
@@ -71,14 +77,14 @@ df_group_week <-df_group %>% group_by(week) %>% summarise_at(c("Diatom_noDetritu
 
 
 week_means %>% 
-  select(diatoms_list_include_maybe$species,"week") %>%
-  gather(key="species",value="conc",-c(week)) %>%
+  select(diatoms_list_include_maybe$taxa,"week") %>%
+  gather(key="taxa",value="conc",-c(week)) %>%
   ggplot() + 
   # geom_point(data=df_group_week,aes(x=week,y=Diatom_noDetritus),color="black",alpha=0.2)+
-  geom_line(aes(x=week,y=conc,color=species)) +
-  geom_point(aes(x=week,y=conc,color=species,shape=species)) +
-  labs(color = "Species",shape="Species")+
-  scale_shape_manual(values=1:length(diatoms_list_include_maybe$species)) +
+  geom_line(aes(x=week,y=conc,color=taxa)) +
+  geom_point(aes(x=week,y=conc,color=taxa,shape=taxa)) +
+  labs(color = "taxa",shape="taxa")+
+  scale_shape_manual(values=1:length(diatoms_list_include_maybe$taxa)) +
   xlab("Week")+
   scale_y_log10(label=comma)+
   scale_x_continuous(breaks=seq(0,53,4)) + 
@@ -99,15 +105,15 @@ ggsave(filename=paste0(basepath,"/figures/cyclic_index/mean_diatom_group_high_cy
 
 
  week_means %>% 
-  select(dino_list_include_maybe$species,"week") %>%
-  gather(key="species",value="conc",-c(week)) %>%
+  select(dino_list_include_maybe$taxa,"week") %>%
+  gather(key="taxa",value="conc",-c(week)) %>%
   ggplot() +
-   geom_line(aes(x=week,y=conc,color=species,shape=species)) +
-   geom_point(aes(x=week,y=conc,color=species,shape=species)) +
-  labs(color = "Species",shape="Species")+
+   geom_line(aes(x=week,y=conc,color=taxa,shape=taxa)) +
+   geom_point(aes(x=week,y=conc,color=taxa,shape=taxa)) +
+  labs(color = "taxa",shape="taxa")+
   xlab("Week")+
   scale_y_sqrt(label=comma)+
-  scale_shape_manual(values=1:length(dino_list_include_maybe$species)) +
+  scale_shape_manual(values=1:length(dino_list_include_maybe$taxa)) +
   scale_x_continuous(breaks=seq(0,53,4)) + 
   ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"))+
   theme(
@@ -126,15 +132,15 @@ ggsave(filename=paste0(basepath,"/figures/cyclic_index/mean_dino_group_high_cycl
 
 
 week_means %>% 
-  select(ciliate_list_include_maybe$species,"week") %>%
-  gather(key="species",value="conc",-c(week)) %>%
+  select(ciliate_list_include_maybe$taxa,"week") %>%
+  gather(key="taxa",value="conc",-c(week)) %>%
   ggplot() + 
-  geom_line(aes(x=week,y=conc,color=species,shape=species)) +
-  geom_point(aes(x=week,y=conc,color=species,shape=species)) +
-  labs(color = "Species",shape="Species")+
+  geom_line(aes(x=week,y=conc,color=taxa,shape=taxa)) +
+  geom_point(aes(x=week,y=conc,color=taxa,shape=taxa)) +
+  labs(color = "taxa",shape="taxa")+
   xlab("Week")+
   scale_y_sqrt(label=comma)+
-  scale_shape_manual(values=1:length(ciliate_list_include_maybe$species)) +
+  scale_shape_manual(values=1:length(ciliate_list_include_maybe$taxa)) +
   scale_x_continuous(breaks=seq(0,53,4)) + 
   ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"))+
   theme(
@@ -152,15 +158,15 @@ ggsave(filename=paste0(basepath,"/figures/cyclic_index/mean_ciliate_group_high_c
 
 
 week_means %>% 
-  select(mn_list_include_maybe$species,"week") %>%
-  gather(key="species",value="conc",-c(week)) %>%
+  select(mn_list_include_maybe$taxa,"week") %>%
+  gather(key="taxa",value="conc",-c(week)) %>%
   ggplot() +
-  geom_line(aes(x=week,y=conc,color=species,shape=species)) +
-  geom_point(aes(x=week,y=conc,color=species,shape=species)) +
-  labs(color = "Species",shape="Species")+
+  geom_line(aes(x=week,y=conc,color=taxa,shape=taxa)) +
+  geom_point(aes(x=week,y=conc,color=taxa,shape=taxa)) +
+  labs(color = "taxa",shape="taxa")+
   xlab("Week")+
   scale_y_sqrt(label=comma)+
-  scale_shape_manual(values=1:length(ciliate_list_include_maybe$species)) +
+  scale_shape_manual(values=1:length(ciliate_list_include_maybe$taxa)) +
   scale_x_continuous(breaks=seq(0,53,4)) + 
   ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"))+
   theme(
@@ -182,17 +188,17 @@ week_means_long <-week_means %>%
 
 annual_peak_times <- week_means_long %>% group_by(taxa) %>% summarise(annual_peak_time = week[which.max(conc)])
 
-annual_peak_times %>% filter(taxa %in% dino_list_include_maybe$species) 
+annual_peak_times %>% filter(taxa %in% dino_list_include_maybe$taxa) 
 
 week_means %>% 
-  select(dino_list_include_maybe$species,"week") %>%
+  select(dino_list_include_maybe$taxa,"week") %>%
   select(-c("Proterythropsis","Gyrodinium"))%>%
-  gather(key="species",value="conc",-c(week)) %>%
-  ggplot() + geom_point(aes(x=week,y=conc,color=species,shape=species)) +
-  labs(color = "Species",shape="Species")+
+  gather(key="taxa",value="conc",-c(week)) %>%
+  ggplot() + geom_point(aes(x=week,y=conc,color=taxa,shape=taxa)) +
+  labs(color = "taxa",shape="taxa")+
   xlab("Week")+
   scale_y_sqrt(label=comma)+
-  scale_shape_manual(values=1:length(dino_list_include_maybe$species)) +
+  scale_shape_manual(values=1:length(dino_list_include_maybe$taxa)) +
   scale_x_continuous(breaks=seq(0,53,4)) + 
   ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"))+
   theme(
@@ -206,13 +212,13 @@ week_means %>%
 
 
 week_means %>% 
-  select(dino_list_include_maybe$species,"week") %>%
-  gather(key="species",value="conc",-c(week)) %>%
-  ggplot() + geom_point(aes(x=week,y=conc,color=species,shape=species)) +
-  labs(color = "Species",shape="Species")+
+  select(dino_list_include_maybe$taxa,"week") %>%
+  gather(key="taxa",value="conc",-c(week)) %>%
+  ggplot() + geom_point(aes(x=week,y=conc,color=taxa,shape=taxa)) +
+  labs(color = "taxa",shape="taxa")+
   xlab("Week")+
   scale_y_sqrt(label=comma)+
-  scale_shape_manual(values=1:length(dino_list_include_maybe$species)) +
+  scale_shape_manual(values=1:length(dino_list_include_maybe$taxa)) +
   scale_x_continuous(breaks=seq(0,53,4)) + 
   ylab(expression("Carbon Concentration ("*mu*"g mL"^-1*")"))+
   theme(
@@ -225,7 +231,7 @@ week_means %>%
   )
 
 
-df_carbonC_wyear_mean %>% select(all_of(c(diatoms_list_include_maybe$species,
+df_carbonC_wyear_mean %>% select(all_of(c(diatoms_list_include_maybe$taxa,
                                           "date","wyear","doy_numeric","week","year"))) %>%
 pivot_longer(-c("date","wyear","doy_numeric","week","year"),
                    names_to="taxa",values_to="conc")   %>% 
